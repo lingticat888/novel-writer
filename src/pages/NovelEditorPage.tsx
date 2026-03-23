@@ -8,6 +8,7 @@ import { WorldStatePanel } from '@/components/world/WorldStatePanel';
 import { ResourceLedgerPanel } from '@/components/resource/ResourceLedgerPanel';
 import { PlotTrackerPanel } from '@/components/plot/PlotTrackerPanel';
 import { ChapterSummaryPanel } from '@/components/chapter/ChapterSummaryPanel';
+import { SidequestProgressPanel } from '@/components/sidequest/SidequestProgressPanel';
 import { exportService } from '@/services';
 
 export function NovelEditorPage() {
@@ -27,6 +28,7 @@ export function NovelEditorPage() {
     isResourceLedgerPanelOpen,
     isPlotTrackerPanelOpen,
     isChapterSummaryPanelOpen,
+    isSidequestProgressPanelOpen,
     openExportModal, 
     closeExportModal,
     openWorldStatePanel,
@@ -37,6 +39,8 @@ export function NovelEditorPage() {
     closePlotTrackerPanel,
     openChapterSummaryPanel,
     closeChapterSummaryPanel,
+    openSidequestProgressPanel,
+    closeSidequestProgressPanel,
   } = useUIStore();
   const { isSaving } = useEditorStore();
 
@@ -127,6 +131,10 @@ export function NovelEditorPage() {
           📋 摘要
         </button>
         
+        <button onClick={openSidequestProgressPanel} className="px-3 py-1.5 text-sm bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 rounded-md hover:bg-orange-200 dark:hover:bg-orange-900/50">
+          🗺️ 支线
+        </button>
+        
         <button
           onClick={openExportModal}
           className="px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600"
@@ -169,6 +177,10 @@ export function NovelEditorPage() {
 
       {isChapterSummaryPanelOpen && currentNovel && (
         <ChapterSummaryPanel novelId={currentNovel.id} onClose={closeChapterSummaryPanel} />
+      )}
+
+      {isSidequestProgressPanelOpen && currentNovel && (
+        <SidequestProgressPanel novelId={currentNovel.id} onClose={closeSidequestProgressPanel} />
       )}
     </div>
   );

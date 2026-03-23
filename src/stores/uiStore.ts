@@ -36,6 +36,10 @@ interface UIState {
   isChapterSummaryPanelOpen: boolean;
   openChapterSummaryPanel: () => void;
   closeChapterSummaryPanel: () => void;
+
+  isSidequestProgressPanelOpen: boolean;
+  openSidequestProgressPanel: () => void;
+  closeSidequestProgressPanel: () => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -127,5 +131,15 @@ export const useUIStore = create<UIState>((set) => ({
 
   closeChapterSummaryPanel: () => {
     set({ isChapterSummaryPanelOpen: false });
+  },
+
+  isSidequestProgressPanelOpen: false,
+
+  openSidequestProgressPanel: () => {
+    set({ isSidequestProgressPanelOpen: true });
+  },
+
+  closeSidequestProgressPanel: () => {
+    set({ isSidequestProgressPanelOpen: false });
   },
 }));
