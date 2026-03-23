@@ -5,9 +5,17 @@ import StarterKit from '@tiptap/starter-kit';
 import Placeholder from '@tiptap/extension-placeholder';
 import Typography from '@tiptap/extension-typography';
 
+function countWords(html: string): number {
+  const text = html.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
+  if (!text) return 0;
+  const chineseChars = text.match(/[\u4e00-\u9fa5]/g) || [];
+  const englishWords = text.match(/[a-zA-Z]+/g) || [];
+  return chineseChars.length + englishWords.length;
+}
+
 export function EditorPane() {
   const { currentChapter, updateChapter } = useNovelStore();
-  const { setContent, setSaving, setLastSavedAt } = useEditorStore();
+  const { setContent, setWordCount, setSaving, setLastSavedAt, isDirty } = useEditorStore();
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSavedContentRef = useRef<string>('');
 
@@ -23,6 +31,7 @@ export function EditorPane() {
     onUpdate: ({ editor }) => {
       const html = editor.getHTML();
       setContent(html);
+      setWordCount(countWords(html));
     },
   });
 
@@ -34,6 +43,7 @@ export function EditorPane() {
       }
       lastSavedContentRef.current = content;
       setContent(content);
+      setWordCount(countWords(content));
     }
   }, [currentChapter?.id]);
 
@@ -99,15 +109,26 @@ export function EditorPane() {
 
   return (
     <div className="flex-1 flex flex-col bg-white dark:bg-gray-900">
-      <div className="border-b border-gray-200 dark:border-gray-700 p-4">
+      <div className="border-b border-gray-200 dark:border-gray-700 p-4 flex items-center justify-between">
         <h2 className="text-lg font-medium text-gray-900 dark:text-white">
           {currentChapter.title}
         </h2>
+        <button
+          onClick={handleSave}
+          disabled={!isDirty}
+          className={`px-4 py-1.5 text-sm rounded-md ${
+            isDirty
+              ? 'bg-indigo-600 text-white hover:bg-indigo-700'
+              : 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
+          }`}
+        >
+          保存
+        </button>
       </div>
 
       <div className="flex-1 overflow-y-auto p-8">
         <div className="max-w-3xl mx-auto">
-          <EditorToolbar editor={editor} />
+          <EditorToolbar editor={editor} onSave={handleSave} />
           <EditorContent
             editor={editor}
             className="prose dark:prose-invert prose-indigo max-w-none outline-none min-h-[500px]"
@@ -118,13 +139,18 @@ export function EditorPane() {
   );
 }
 
-function EditorToolbar({ editor }: { editor: ReturnType<typeof useEditor> }) {
+function EditorToolbar({ editor, onSave }: { editor: ReturnType<typeof useEditor>; onSave: () => void }) {
   if (!editor) return null;
+
+  const runCommand = (command: () => boolean) => {
+    editor?.view.focus();
+    command();
+  };
 
   return (
     <div className="flex gap-2 mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
       <button
-        onClick={() => editor.chain().focus().toggleBold().run()}
+        onClick={() => runCommand(() => editor.chain().focus().toggleBold().run())}
         className={`p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 ${
           editor.isActive('bold') ? 'bg-gray-200 dark:bg-gray-700' : ''
         }`}
@@ -133,7 +159,7 @@ function EditorToolbar({ editor }: { editor: ReturnType<typeof useEditor> }) {
         <span className="font-bold text-sm">B</span>
       </button>
       <button
-        onClick={() => editor.chain().focus().toggleItalic().run()}
+        onClick={() => runCommand(() => editor.chain().focus().toggleItalic().run())}
         className={`p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 ${
           editor.isActive('italic') ? 'bg-gray-200 dark:bg-gray-700' : ''
         }`}
@@ -142,7 +168,7 @@ function EditorToolbar({ editor }: { editor: ReturnType<typeof useEditor> }) {
         <span className="italic text-sm">I</span>
       </button>
       <button
-        onClick={() => editor.chain().focus().toggleStrike().run()}
+        onClick={() => runCommand(() => editor.chain().focus().toggleStrike().run())}
         className={`p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 ${
           editor.isActive('strike') ? 'bg-gray-200 dark:bg-gray-700' : ''
         }`}
@@ -154,7 +180,7 @@ function EditorToolbar({ editor }: { editor: ReturnType<typeof useEditor> }) {
       <div className="w-px bg-gray-300 dark:bg-gray-600 mx-1" />
 
       <button
-        onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+        onClick={() => runCommand(() => editor.chain().focus().toggleHeading({ level: 1 }).run())}
         className={`p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 ${
           editor.isActive('heading', { level: 1 }) ? 'bg-gray-200 dark:bg-gray-700' : ''
         }`}
@@ -163,7 +189,7 @@ function EditorToolbar({ editor }: { editor: ReturnType<typeof useEditor> }) {
         <span className="text-sm font-bold">H1</span>
       </button>
       <button
-        onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+        onClick={() => runCommand(() => editor.chain().focus().toggleHeading({ level: 2 }).run())}
         className={`p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 ${
           editor.isActive('heading', { level: 2 }) ? 'bg-gray-200 dark:bg-gray-700' : ''
         }`}
@@ -172,7 +198,7 @@ function EditorToolbar({ editor }: { editor: ReturnType<typeof useEditor> }) {
         <span className="text-sm font-bold">H2</span>
       </button>
       <button
-        onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+        onClick={() => runCommand(() => editor.chain().focus().toggleHeading({ level: 3 }).run())}
         className={`p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 ${
           editor.isActive('heading', { level: 3 }) ? 'bg-gray-200 dark:bg-gray-700' : ''
         }`}
@@ -184,7 +210,7 @@ function EditorToolbar({ editor }: { editor: ReturnType<typeof useEditor> }) {
       <div className="w-px bg-gray-300 dark:bg-gray-600 mx-1" />
 
       <button
-        onClick={() => editor.chain().focus().toggleBlockquote().run()}
+        onClick={() => runCommand(() => editor.chain().focus().toggleBlockquote().run())}
         className={`p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 ${
           editor.isActive('blockquote') ? 'bg-gray-200 dark:bg-gray-700' : ''
         }`}
@@ -195,12 +221,24 @@ function EditorToolbar({ editor }: { editor: ReturnType<typeof useEditor> }) {
         </svg>
       </button>
       <button
-        onClick={() => editor.chain().focus().setHorizontalRule().run()}
+        onClick={() => runCommand(() => editor.chain().focus().setHorizontalRule().run())}
         className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
         title="分隔线"
       >
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14" />
+        </svg>
+      </button>
+
+      <div className="flex-1" />
+
+      <button
+        onClick={onSave}
+        className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 text-indigo-600"
+        title="保存"
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
         </svg>
       </button>
     </div>

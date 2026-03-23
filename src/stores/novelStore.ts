@@ -47,7 +47,7 @@ export const useNovelStore = create<NovelState>((set) => ({
     try {
       const novels = await novelRepository.findByUserId(userId);
       set({ novels, isLoading: false });
-    } catch (error) {
+    } catch {
       set({ error: '加载作品列表失败', isLoading: false });
     }
   },
@@ -65,7 +65,7 @@ export const useNovelStore = create<NovelState>((set) => ({
       } else {
         set({ error: '作品不存在', isLoading: false });
       }
-    } catch (error) {
+    } catch {
       set({ error: '加载作品失败', isLoading: false });
     }
   },
@@ -79,7 +79,7 @@ export const useNovelStore = create<NovelState>((set) => ({
         isLoading: false,
       }));
       return novel;
-    } catch (error) {
+    } catch {
       set({ error: '创建作品失败', isLoading: false });
       throw error;
     }
@@ -94,7 +94,7 @@ export const useNovelStore = create<NovelState>((set) => ({
         currentNovel: state.currentNovel?.id === novelId ? null : state.currentNovel,
         isLoading: false,
       }));
-    } catch (error) {
+    } catch {
       set({ error: '删除作品失败', isLoading: false });
     }
   },
@@ -110,7 +110,7 @@ export const useNovelStore = create<NovelState>((set) => ({
           ? { ...state.currentNovel, ...data, updatedAt: new Date() }
           : state.currentNovel,
       }));
-    } catch (error) {
+    } catch {
       set({ error: '更新作品失败' });
     }
   },
@@ -120,9 +120,12 @@ export const useNovelStore = create<NovelState>((set) => ({
       const volume = await novelRepository.addVolume(novelId, title);
       set((state) => ({
         volumes: [...state.volumes, volume],
+        currentNovel: state.currentNovel?.id === novelId
+          ? { ...state.currentNovel, volumes: [...(state.currentNovel.volumes || []), volume] }
+          : state.currentNovel,
       }));
       return volume;
-    } catch (error) {
+    } catch {
       set({ error: '添加卷失败' });
       throw error;
     }
@@ -139,7 +142,7 @@ export const useNovelStore = create<NovelState>((set) => ({
           ? { ...state.currentVolume, ...data, updatedAt: new Date() }
           : state.currentVolume,
       }));
-    } catch (error) {
+    } catch {
       set({ error: '更新卷失败' });
     }
   },
@@ -151,7 +154,7 @@ export const useNovelStore = create<NovelState>((set) => ({
         volumes: state.volumes.filter((v) => v.id !== volumeId),
         currentVolume: state.currentVolume?.id === volumeId ? null : state.currentVolume,
       }));
-    } catch (error) {
+    } catch {
       set({ error: '删除卷失败' });
     }
   },
@@ -163,15 +166,21 @@ export const useNovelStore = create<NovelState>((set) => ({
   addChapter: async (volumeId: string, title: string) => {
     try {
       const chapter = await novelRepository.addChapter(volumeId, title);
-      set((state) => ({
-        volumes: state.volumes.map((v) =>
+      set((state) => {
+        const updatedVolumes = state.volumes.map((v) =>
           v.id === volumeId
             ? { ...v, chapters: [...(v.chapters || []), chapter] }
             : v
-        ),
-      }));
+        );
+        return {
+          volumes: updatedVolumes,
+          currentNovel: state.currentNovel
+            ? { ...state.currentNovel, volumes: updatedVolumes }
+            : state.currentNovel,
+        };
+      });
       return chapter;
-    } catch (error) {
+    } catch {
       set({ error: '添加章节失败' });
       throw error;
     }
@@ -194,7 +203,7 @@ export const useNovelStore = create<NovelState>((set) => ({
             : state.currentChapter,
         };
       });
-    } catch (error) {
+    } catch {
       set({ error: '更新章节失败' });
     }
   },
@@ -209,7 +218,7 @@ export const useNovelStore = create<NovelState>((set) => ({
         })),
         currentChapter: state.currentChapter?.id === chapterId ? null : state.currentChapter,
       }));
-    } catch (error) {
+    } catch {
       set({ error: '删除章节失败' });
     }
   },
@@ -228,7 +237,7 @@ export const useNovelStore = create<NovelState>((set) => ({
           .map((v, i) => ({ ...v, order: i }));
         return { volumes: reordered };
       });
-    } catch (error) {
+    } catch {
       set({ error: '重新排序失败' });
     }
   },
@@ -246,7 +255,7 @@ export const useNovelStore = create<NovelState>((set) => ({
           return { ...v, chapters: reordered };
         }),
       }));
-    } catch (error) {
+    } catch {
       set({ error: '重新排序失败' });
     }
   },
@@ -278,7 +287,7 @@ export const useNovelStore = create<NovelState>((set) => ({
         });
         return { volumes: updatedVolumes };
       });
-    } catch (error) {
+    } catch {
       set({ error: '移动章节失败' });
     }
   },

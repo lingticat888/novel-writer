@@ -33,7 +33,7 @@ export const useAuthStore = create<AuthState>()(
           } else {
             set({ error: '邮箱或密码错误', isLoading: false });
           }
-        } catch (error) {
+        } catch {
           set({ error: '登录失败', isLoading: false });
         }
       },
@@ -43,7 +43,7 @@ export const useAuthStore = create<AuthState>()(
         try {
           const user = await userRepository.create(data);
           set({ user, isAuthenticated: true, isLoading: false });
-        } catch (error) {
+        } catch {
           set({ error: error instanceof Error ? error.message : '注册失败', isLoading: false });
         }
       },
