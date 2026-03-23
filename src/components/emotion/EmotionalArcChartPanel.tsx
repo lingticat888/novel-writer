@@ -1,26 +1,49 @@
 import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
-import { useEmotionalArcStore, useNovelStore, useChapterSummaryStore } from '@/stores';
+import { useEmotionalArcStore, useNovelStore } from '@/stores';
 import type { EmotionalType } from '@/models';
+import { POSITIVE_EMOTIONS, NEGATIVE_EMOTIONS } from '@/models';
 
 const EMOTION_COLORS: Record<EmotionalType, string> = {
-  joy: '#fbbf24',
+  thrill: '#22c55e',
+  anticipation: '#84cc16',
+  adoration: '#f472b6',
+  couple_vibe: '#ec4899',
+  relief: '#10b981',
+  sweetness: '#f9a8d4',
+  touching: '#fb7185',
+  achievement: '#eab308',
+  relaxation: '#a3e635',
   anger: '#ef4444',
-  sadness: '#3b82f6',
-  happiness: '#ec4899',
-  surprise: '#a855f7',
-  fear: '#6b7280',
-  contemplation: '#6366f1',
+  suppressed: '#f97316',
+  depression: '#6366f1',
+  hatred: '#dc2626',
+  anxiety: '#f59e0b',
+  nervousness: '#f43f5e',
+  worry: '#8b5cf6',
+  suffering: '#a1a1aa',
+  awkwardness: '#71717a',
 };
 
 const EMOTION_LABELS: Record<EmotionalType, string> = {
-  joy: '喜悦',
+  thrill: '爽',
+  anticipation: '期待',
+  adoration: '苏感',
+  couple_vibe: 'CP感',
+  relief: '解气',
+  sweetness: '甜宠',
+  touching: '感动',
+  achievement: '成就',
+  relaxation: '轻松',
   anger: '愤怒',
-  sadness: '悲伤',
-  happiness: '幸福',
-  surprise: '惊讶',
-  fear: '恐惧',
-  contemplation: '沉思',
+  suppressed: '憋屈',
+  depression: '郁闷',
+  hatred: '仇恨',
+  anxiety: '着急',
+  nervousness: '紧张',
+  worry: '担忧',
+  suffering: '虐',
+  awkwardness: '尴尬',
 };
 
 interface EmotionalArcChartPanelProps {
@@ -41,20 +64,18 @@ export function EmotionalArcChartPanel({ novelId, onClose }: EmotionalArcChartPa
   } = useEmotionalArcStore();
 
   const { currentNovel } = useNovelStore();
-  const { loadSummariesByNovelId } = useChapterSummaryStore();
 
   const [isCreating, setIsCreating] = useState(false);
   const [targetType, setTargetType] = useState<'novel' | 'character'>('novel');
   const [selectedCharacterId, setSelectedCharacterId] = useState<string>('');
   const [addingToChapterId, setAddingToChapterId] = useState<string | null>(null);
-  const [newEmotion, setNewEmotion] = useState<EmotionalType>('happiness');
+  const [newEmotion, setNewEmotion] = useState<EmotionalType>('thrill');
   const [newIntensity, setNewIntensity] = useState(50);
   const [newNote, setNewNote] = useState('');
 
   useEffect(() => {
     loadArcs(novelId);
-    loadSummariesByNovelId(novelId);
-  }, [novelId, loadArcs, loadSummariesByNovelId]);
+  }, [novelId, loadArcs]);
 
   const selectedArc = arcs.find((a) => a.id === selectedArcId);
 
@@ -80,7 +101,7 @@ export function EmotionalArcChartPanel({ novelId, onClose }: EmotionalArcChartPa
       note: newNote,
     });
     setAddingToChapterId(null);
-    setNewEmotion('happiness');
+    setNewEmotion('thrill');
     setNewIntensity(50);
     setNewNote('');
   };
@@ -238,16 +259,45 @@ export function EmotionalArcChartPanel({ novelId, onClose }: EmotionalArcChartPa
                 <div className="mt-4">
                   <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">添加情感点</h4>
                   {addingToChapterId ? (
-                    <div className="space-y-2 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
-                      <select
-                        value={newEmotion}
-                        onChange={(e) => setNewEmotion(e.target.value as EmotionalType)}
-                        className="w-full px-2 py-1 text-sm border rounded dark:bg-gray-700 dark:border-gray-600"
-                      >
-                        {(Object.keys(EMOTION_LABELS) as EmotionalType[]).map((emotion) => (
-                          <option key={emotion} value={emotion}>{EMOTION_LABELS[emotion]}</option>
-                        ))}
-                      </select>
+                    <div className="space-y-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                      <div>
+                        <div className="text-xs text-gray-500 mb-1">正面情绪</div>
+                        <div className="flex flex-wrap gap-1">
+                          {POSITIVE_EMOTIONS.map((emotion) => (
+                            <button
+                              key={emotion}
+                              onClick={() => setNewEmotion(emotion)}
+                              className={`px-2 py-1 text-xs rounded-full transition-colors ${
+                                newEmotion === emotion
+                                  ? 'text-white'
+                                  : 'bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 hover:bg-green-200 dark:hover:bg-green-900/50'
+                              }`}
+                              style={newEmotion === emotion ? { backgroundColor: EMOTION_COLORS[emotion] } : {}}
+                            >
+                              {EMOTION_LABELS[emotion]}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <div className="text-xs text-gray-500 mb-1">负面情绪</div>
+                        <div className="flex flex-wrap gap-1">
+                          {NEGATIVE_EMOTIONS.map((emotion) => (
+                            <button
+                              key={emotion}
+                              onClick={() => setNewEmotion(emotion)}
+                              className={`px-2 py-1 text-xs rounded-full transition-colors ${
+                                newEmotion === emotion
+                                  ? 'text-white'
+                                  : 'bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-400 hover:bg-red-200 dark:hover:bg-red-900/50'
+                              }`}
+                              style={newEmotion === emotion ? { backgroundColor: EMOTION_COLORS[emotion] } : {}}
+                            >
+                              {EMOTION_LABELS[emotion]}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
                       <div className="flex items-center gap-2">
                         <span className="text-sm text-gray-500">强度:</span>
                         <input
@@ -343,16 +393,31 @@ export function EmotionalArcChartPanel({ novelId, onClose }: EmotionalArcChartPa
         </div>
 
         <div className="p-4 border-t dark:border-gray-700 flex justify-between items-center">
-          <div className="flex gap-4">
-            {(Object.keys(EMOTION_LABELS) as EmotionalType[]).map((emotion) => (
-              <div key={emotion} className="flex items-center gap-1">
-                <span
-                  className="w-3 h-3 rounded-full"
-                  style={{ backgroundColor: EMOTION_COLORS[emotion] }}
-                />
-                <span className="text-xs text-gray-600 dark:text-gray-400">{EMOTION_LABELS[emotion]}</span>
-              </div>
-            ))}
+          <div className="flex gap-6">
+            <div className="flex gap-3">
+              <span className="text-xs text-green-600 font-medium">正面</span>
+              {POSITIVE_EMOTIONS.map((emotion) => (
+                <div key={emotion} className="flex items-center gap-1">
+                  <span
+                    className="w-2 h-2 rounded-full"
+                    style={{ backgroundColor: EMOTION_COLORS[emotion] }}
+                  />
+                  <span className="text-xs text-gray-500">{EMOTION_LABELS[emotion]}</span>
+                </div>
+              ))}
+            </div>
+            <div className="flex gap-3">
+              <span className="text-xs text-red-600 font-medium">负面</span>
+              {NEGATIVE_EMOTIONS.map((emotion) => (
+                <div key={emotion} className="flex items-center gap-1">
+                  <span
+                    className="w-2 h-2 rounded-full"
+                    style={{ backgroundColor: EMOTION_COLORS[emotion] }}
+                  />
+                  <span className="text-xs text-gray-500">{EMOTION_LABELS[emotion]}</span>
+                </div>
+              ))}
+            </div>
           </div>
           <button
             onClick={onClose}

@@ -1,25 +1,48 @@
 import { useState, useEffect } from 'react';
 import { useChapterSummaryStore, useNovelStore } from '@/stores';
 import type { EmotionalType } from '@/models';
+import { POSITIVE_EMOTIONS, NEGATIVE_EMOTIONS } from '@/models';
 
 const EMOTIONAL_LABELS: Record<EmotionalType, string> = {
-  joy: '喜悦',
+  thrill: '爽',
+  anticipation: '期待',
+  adoration: '苏感',
+  couple_vibe: 'CP感',
+  relief: '解气',
+  sweetness: '甜宠',
+  touching: '感动',
+  achievement: '成就',
+  relaxation: '轻松',
   anger: '愤怒',
-  sadness: '悲伤',
-  happiness: '幸福',
-  surprise: '惊讶',
-  fear: '恐惧',
-  contemplation: '沉思',
+  suppressed: '憋屈',
+  depression: '郁闷',
+  hatred: '仇恨',
+  anxiety: '着急',
+  nervousness: '紧张',
+  worry: '担忧',
+  suffering: '虐',
+  awkwardness: '尴尬',
 };
 
 const EMOTIONAL_COLORS: Record<EmotionalType, string> = {
-  joy: 'bg-yellow-100 text-yellow-800',
+  thrill: 'bg-green-100 text-green-800',
+  anticipation: 'bg-lime-100 text-lime-800',
+  adoration: 'bg-pink-100 text-pink-800',
+  couple_vibe: 'bg-pink-200 text-pink-800',
+  relief: 'bg-emerald-100 text-emerald-800',
+  sweetness: 'bg-rose-100 text-rose-800',
+  touching: 'bg-rose-200 text-rose-800',
+  achievement: 'bg-yellow-100 text-yellow-800',
+  relaxation: 'bg-green-200 text-green-800',
   anger: 'bg-red-100 text-red-800',
-  sadness: 'bg-blue-100 text-blue-800',
-  happiness: 'bg-pink-100 text-pink-800',
-  surprise: 'bg-purple-100 text-purple-800',
-  fear: 'bg-gray-100 text-gray-800',
-  contemplation: 'bg-indigo-100 text-indigo-800',
+  suppressed: 'bg-orange-100 text-orange-800',
+  depression: 'bg-violet-100 text-violet-800',
+  hatred: 'bg-red-200 text-red-800',
+  anxiety: 'bg-amber-100 text-amber-800',
+  nervousness: 'bg-rose-300 text-rose-800',
+  worry: 'bg-violet-200 text-violet-800',
+  suffering: 'bg-gray-200 text-gray-800',
+  awkwardness: 'bg-gray-300 text-gray-800',
 };
 
 interface ChapterSummaryPanelProps {
@@ -51,7 +74,7 @@ export function ChapterSummaryPanel({ novelId, onClose }: ChapterSummaryPanelPro
     coreEvents: '',
     appearingCharacters: '',
     plotFlags: '',
-    emotionalTone: 'happiness',
+    emotionalTone: 'thrill',
     customNotes: '',
   });
 
@@ -86,7 +109,7 @@ export function ChapterSummaryPanel({ novelId, onClose }: ChapterSummaryPanelPro
         coreEvents: '',
         appearingCharacters: '',
         plotFlags: '',
-        emotionalTone: 'happiness',
+        emotionalTone: 'thrill',
         customNotes: '',
       });
     }
@@ -226,20 +249,43 @@ export function ChapterSummaryPanel({ novelId, onClose }: ChapterSummaryPanelPro
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
                       情感基调
                     </label>
-                    <div className="flex flex-wrap gap-2">
-                      {(Object.keys(EMOTIONAL_LABELS) as EmotionalType[]).map((emotion) => (
-                        <button
-                          key={emotion}
-                          onClick={() => setEditData({ ...editData, emotionalTone: emotion })}
-                          className={`px-3 py-1.5 rounded-full text-sm ${
-                            editData.emotionalTone === emotion
-                              ? EMOTIONAL_COLORS[emotion] + ' ring-2 ring-offset-2 ring-indigo-500'
-                              : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
-                          }`}
-                        >
-                          {EMOTIONAL_LABELS[emotion]}
-                        </button>
-                      ))}
+                    <div className="space-y-2">
+                      <div>
+                        <span className="text-xs text-green-600 font-medium mr-2">正面情绪</span>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {POSITIVE_EMOTIONS.map((emotion) => (
+                            <button
+                              key={emotion}
+                              onClick={() => setEditData({ ...editData, emotionalTone: emotion })}
+                              className={`px-2 py-1 rounded-full text-xs ${
+                                editData.emotionalTone === emotion
+                                  ? EMOTIONAL_COLORS[emotion] + ' ring-2 ring-offset-1 ring-indigo-500'
+                                  : 'bg-green-50 dark:bg-green-900/20 text-green-700 dark:text-green-400 hover:bg-green-100 dark:hover:bg-green-900/40'
+                              }`}
+                            >
+                              {EMOTIONAL_LABELS[emotion]}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                      <div>
+                        <span className="text-xs text-red-600 font-medium mr-2">负面情绪</span>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {NEGATIVE_EMOTIONS.map((emotion) => (
+                            <button
+                              key={emotion}
+                              onClick={() => setEditData({ ...editData, emotionalTone: emotion })}
+                              className={`px-2 py-1 rounded-full text-xs ${
+                                editData.emotionalTone === emotion
+                                  ? EMOTIONAL_COLORS[emotion] + ' ring-2 ring-offset-1 ring-indigo-500'
+                                  : 'bg-red-50 dark:bg-red-900/20 text-red-700 dark:text-red-400 hover:bg-red-100 dark:hover:bg-red-900/40'
+                              }`}
+                            >
+                              {EMOTIONAL_LABELS[emotion]}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
                     </div>
                   </div>
 

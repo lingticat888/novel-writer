@@ -136,7 +136,35 @@ export interface ChapterSummary {
   updatedAt: Date;
 }
 
-export type EmotionalType = 'joy' | 'anger' | 'sadness' | 'happiness' | 'surprise' | 'fear' | 'contemplation';
+export type EmotionalType = 
+  | 'thrill'
+  | 'anticipation'
+  | 'adoration'
+  | 'couple_vibe'
+  | 'relief'
+  | 'sweetness'
+  | 'touching'
+  | 'achievement'
+  | 'relaxation'
+  | 'anger'
+  | 'suppressed'
+  | 'depression'
+  | 'hatred'
+  | 'anxiety'
+  | 'nervousness'
+  | 'worry'
+  | 'suffering'
+  | 'awkwardness';
+
+export const POSITIVE_EMOTIONS: EmotionalType[] = [
+  'thrill', 'anticipation', 'adoration', 'couple_vibe', 
+  'relief', 'sweetness', 'touching', 'achievement', 'relaxation'
+];
+
+export const NEGATIVE_EMOTIONS: EmotionalType[] = [
+  'anger', 'suppressed', 'depression', 'hatred', 
+  'anxiety', 'nervousness', 'worry', 'suffering', 'awkwardness'
+];
 
 export interface SidequestProgress {
   id: string;
