@@ -11,6 +11,7 @@ import { ChapterSummaryPanel } from '@/components/chapter/ChapterSummaryPanel';
 import { SidequestProgressPanel } from '@/components/sidequest/SidequestProgressPanel';
 import { EmotionalArcChartPanel } from '@/components/emotion/EmotionalArcChartPanel';
 import { CharacterInteractionMatrixPanel } from '@/components/interaction/CharacterInteractionMatrixPanel';
+import { CharacterPanel } from '@/components/character/CharacterPanel';
 import { exportService } from '@/services';
 
 export function NovelEditorPage() {
@@ -33,6 +34,7 @@ export function NovelEditorPage() {
     isSidequestProgressPanelOpen,
     isEmotionalArcChartPanelOpen,
     isCharacterInteractionMatrixPanelOpen,
+    isCharacterPanelOpen,
     openExportModal, 
     closeExportModal,
     openWorldStatePanel,
@@ -49,6 +51,8 @@ export function NovelEditorPage() {
     closeEmotionalArcChartPanel,
     openCharacterInteractionMatrixPanel,
     closeCharacterInteractionMatrixPanel,
+    openCharacterPanel,
+    closeCharacterPanel,
   } = useUIStore();
   const { isSaving } = useEditorStore();
 
@@ -148,7 +152,11 @@ export function NovelEditorPage() {
         </button>
         
         <button onClick={openCharacterInteractionMatrixPanel} className="px-3 py-1.5 text-sm bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-400 rounded-md hover:bg-cyan-200 dark:hover:bg-cyan-900/50">
-          🔗 角色
+          🔗 关系
+        </button>
+        
+        <button onClick={openCharacterPanel} className="px-3 py-1.5 text-sm bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-400 rounded-md hover:bg-indigo-200 dark:hover:bg-indigo-900/50">
+          👤 角色
         </button>
         
         <button
@@ -205,6 +213,10 @@ export function NovelEditorPage() {
 
       {isCharacterInteractionMatrixPanelOpen && currentNovel && (
         <CharacterInteractionMatrixPanel novelId={currentNovel.id} onClose={closeCharacterInteractionMatrixPanel} />
+      )}
+
+      {isCharacterPanelOpen && currentNovel && (
+        <CharacterPanel novelId={currentNovel.id} onClose={closeCharacterPanel} />
       )}
     </div>
   );

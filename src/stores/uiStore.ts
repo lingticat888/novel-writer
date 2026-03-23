@@ -48,6 +48,10 @@ interface UIState {
   isCharacterInteractionMatrixPanelOpen: boolean;
   openCharacterInteractionMatrixPanel: () => void;
   closeCharacterInteractionMatrixPanel: () => void;
+
+  isCharacterPanelOpen: boolean;
+  openCharacterPanel: () => void;
+  closeCharacterPanel: () => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -169,5 +173,15 @@ export const useUIStore = create<UIState>((set) => ({
 
   closeCharacterInteractionMatrixPanel: () => {
     set({ isCharacterInteractionMatrixPanelOpen: false });
+  },
+
+  isCharacterPanelOpen: false,
+
+  openCharacterPanel: () => {
+    set({ isCharacterPanelOpen: true });
+  },
+
+  closeCharacterPanel: () => {
+    set({ isCharacterPanelOpen: false });
   },
 }));

@@ -9,3 +9,4 @@ export { useChapterSummaryStore } from './chapterSummaryStore';
 export { useSidequestStore } from './sidequestStore';
 export { useEmotionalArcStore } from './emotionalArcStore';
 export { useCharacterInteractionStore } from './characterInteractionStore';
+export { useCharacterStore } from './characterStore';

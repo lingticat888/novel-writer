@@ -178,6 +178,9 @@ export class NovelRepository {
     }
     novel.volumes = volumes;
 
+    const characters = await db.characters.where('novelId').equals(novelId).toArray();
+    novel.characters = characters;
+
     return novel;
   }
 
