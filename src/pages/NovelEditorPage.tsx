@@ -5,6 +5,7 @@ import { Sidebar } from '@/components/layout/Sidebar';
 import { EditorPane } from '@/components/layout/EditorPane';
 import { StatusBar } from '@/components/layout/StatusBar';
 import { WorldStatePanel } from '@/components/world/WorldStatePanel';
+import { ResourceLedgerPanel } from '@/components/resource/ResourceLedgerPanel';
 import { exportService } from '@/services';
 
 export function NovelEditorPage() {
@@ -21,10 +22,13 @@ export function NovelEditorPage() {
     isSidebarOpen, 
     isExportModalOpen, 
     isWorldStatePanelOpen,
+    isResourceLedgerPanelOpen,
     openExportModal, 
     closeExportModal,
     openWorldStatePanel,
     closeWorldStatePanel,
+    openResourceLedgerPanel,
+    closeResourceLedgerPanel,
   } = useUIStore();
   const { isSaving } = useEditorStore();
 
@@ -107,6 +111,15 @@ export function NovelEditorPage() {
           世界
         </button>
         <button
+          onClick={openResourceLedgerPanel}
+          className="px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md flex items-center gap-1"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0 8c1.11 0 2.08.402 2.599 1M12 8V7m0 13a9 9 0 110-18 9 9 0 010 18m0-9-9v9m-9-9v9" />
+          </svg>
+          资源
+        </button>
+        <button
           onClick={openExportModal}
           className="px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md flex items-center gap-1"
         >
@@ -140,6 +153,13 @@ export function NovelEditorPage() {
         <WorldStatePanel
           novelId={currentNovel.id}
           onClose={closeWorldStatePanel}
+        />
+      )}
+
+      {isResourceLedgerPanelOpen && currentNovel && (
+        <ResourceLedgerPanel
+          novelId={currentNovel.id}
+          onClose={closeResourceLedgerPanel}
         />
       )}
     </div>

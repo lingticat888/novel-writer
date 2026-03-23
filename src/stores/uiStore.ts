@@ -24,6 +24,10 @@ interface UIState {
 
   openWorldStatePanel: () => void;
   closeWorldStatePanel: () => void;
+
+  isResourceLedgerPanelOpen: boolean;
+  openResourceLedgerPanel: () => void;
+  closeResourceLedgerPanel: () => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -85,5 +89,15 @@ export const useUIStore = create<UIState>((set) => ({
 
   closeWorldStatePanel: () => {
     set({ isWorldStatePanelOpen: false });
+  },
+
+  isResourceLedgerPanelOpen: false,
+
+  openResourceLedgerPanel: () => {
+    set({ isResourceLedgerPanelOpen: true });
+  },
+
+  closeResourceLedgerPanel: () => {
+    set({ isResourceLedgerPanelOpen: false });
   },
 }));
