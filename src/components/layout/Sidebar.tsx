@@ -278,12 +278,12 @@ function VolumeItem({
           </svg>
         </button>
         
-        <button
+        <span
           onClick={(e) => {
             e.stopPropagation();
             onToggle();
           }}
-          className="p-1"
+          className="flex-shrink-0 cursor-pointer"
         >
           <svg
             className={`w-4 h-4 transition-transform ${isExpanded ? 'rotate-90' : ''}`}
@@ -293,7 +293,7 @@ function VolumeItem({
           >
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
           </svg>
-        </button>
+        </span>
         
         {editingId?.type === 'volume' && editingId.id === volume.id ? (
           <input
@@ -309,13 +309,16 @@ function VolumeItem({
         ) : (
           <span
             className="flex-1 text-sm font-medium truncate"
-            onDoubleClick={onDoubleClick}
+            onDoubleClick={(e) => {
+              e.stopPropagation();
+              onDoubleClick(e);
+            }}
           >
-            📁 {volume.title}
+            {volume.title}
           </span>
         )}
         
-        <span className="text-xs text-gray-400">
+        <span className="text-xs text-gray-400 flex-shrink-0">
           {volume.chapters?.length || 0}
         </span>
         
@@ -324,7 +327,8 @@ function VolumeItem({
             e.stopPropagation();
             onAddChapter();
           }}
-          className="p-1 opacity-0 group-hover:opacity-100 hover:text-indigo-600"
+          className="p-1 text-gray-400 hover:text-indigo-600 flex-shrink-0"
+          title="添加章节"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -332,8 +336,12 @@ function VolumeItem({
         </button>
         
         <button
-          onClick={onDelete}
-          className="p-1 opacity-0 group-hover:opacity-100 hover:text-red-600"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete(e);
+          }}
+          className="p-1 text-gray-400 hover:text-red-600 flex-shrink-0"
+          title="删除卷"
         >
           <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -449,8 +457,11 @@ function ChapterItem({
       )}
       
       <button
-        onClick={onDelete}
-        className="p-1 opacity-0 group-hover:opacity-100 hover:text-red-600"
+        onClick={(e) => {
+          e.stopPropagation();
+          onDelete(e);
+        }}
+        className="p-1 text-gray-400 hover:text-red-600 flex-shrink-0"
       >
         <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
