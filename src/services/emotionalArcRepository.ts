@@ -4,6 +4,7 @@ import { generateId } from '@/utils';
 
 export interface CreateEmotionalArcDTO {
   novelId: string;
+  name: string;
   targetType: 'novel' | 'character';
   targetId?: string;
 }
@@ -39,6 +40,7 @@ export class EmotionalArcRepository {
     const arc: EmotionalArc = {
       id: generateId(),
       novelId: data.novelId,
+      name: data.name,
       targetType: data.targetType,
       targetId: data.targetId,
       points: [],

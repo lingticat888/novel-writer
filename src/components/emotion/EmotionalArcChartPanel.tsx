@@ -67,6 +67,7 @@ export function EmotionalArcChartPanel({ novelId, onClose }: EmotionalArcChartPa
   const { currentNovel } = useNovelStore();
 
   const [isCreating, setIsCreating] = useState(false);
+  const [newArcName, setNewArcName] = useState('');
   const [targetType, setTargetType] = useState<'novel' | 'character'>('novel');
   const [selectedCharacterId, setSelectedCharacterId] = useState<string>('');
   const [addingToChapterId, setAddingToChapterId] = useState<string | null>(null);
@@ -86,12 +87,15 @@ export function EmotionalArcChartPanel({ novelId, onClose }: EmotionalArcChartPa
   ) || [];
 
   const handleCreate = async () => {
+    if (!newArcName.trim()) return;
     await createArc({
       novelId,
+      name: newArcName.trim(),
       targetType,
       targetId: targetType === 'character' ? selectedCharacterId : undefined,
     });
     setIsCreating(false);
+    setNewArcName('');
   };
 
   const handleAddPoint = async () => {
@@ -189,6 +193,14 @@ export function EmotionalArcChartPanel({ novelId, onClose }: EmotionalArcChartPa
             {isCreating && (
               <div className="p-3 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
                 <div className="space-y-2">
+                  <input
+                    type="text"
+                    value={newArcName}
+                    onChange={(e) => setNewArcName(e.target.value)}
+                    placeholder="弧线名称（如：主角情感线）"
+                    className="w-full px-2 py-1 text-sm border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                    autoFocus
+                  />
                   <select
                     value={targetType}
                     onChange={(e) => setTargetType(e.target.value as 'novel' | 'character')}
@@ -211,14 +223,18 @@ export function EmotionalArcChartPanel({ novelId, onClose }: EmotionalArcChartPa
                   )}
                   <div className="flex gap-2">
                     <button
-                      onClick={() => setIsCreating(false)}
+                      onClick={() => {
+                        setIsCreating(false);
+                        setNewArcName('');
+                      }}
                       className="flex-1 px-2 py-1 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
                     >
                       取消
                     </button>
                     <button
                       onClick={handleCreate}
-                      className="flex-1 px-2 py-1 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                      disabled={!newArcName.trim()}
+                      className="flex-1 px-2 py-1 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50"
                     >
                       创建
                     </button>
@@ -240,8 +256,8 @@ export function EmotionalArcChartPanel({ novelId, onClose }: EmotionalArcChartPa
                       : 'text-gray-700 dark:text-gray-300'
                   }`}
                 >
-                  <div className="text-sm font-medium">
-                    {arc.targetType === 'novel' ? '📖 小说情感' : '👤 角色情感'}
+                  <div className="text-sm font-medium truncate">
+                    {arc.name}
                   </div>
                   <div className="text-xs text-gray-400">
                     {arc.points.length} 个数据点
@@ -256,7 +272,7 @@ export function EmotionalArcChartPanel({ novelId, onClose }: EmotionalArcChartPa
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="font-medium text-gray-900 dark:text-white">
-                    {selectedArc.targetType === 'novel' ? '整部小说情感弧度' : '角色情感弧度'}
+                    {selectedArc.name}
                   </h3>
                   <button
                     onClick={() => deleteArc(selectedArc.id)}

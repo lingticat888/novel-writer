@@ -192,6 +192,7 @@ export interface ProgressChange {
 export interface EmotionalArc {
   id: string;
   novelId: string;
+  name: string;
   targetType: 'novel' | 'character';
   targetId?: string;
   points: EmotionalPoint[];
