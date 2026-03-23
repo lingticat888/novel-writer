@@ -1,0 +1,367 @@
+import { useState, useEffect } from 'react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { useEmotionalArcStore, useNovelStore, useChapterSummaryStore } from '@/stores';
+import type { EmotionalType } from '@/models';
+
+const EMOTION_COLORS: Record<EmotionalType, string> = {
+  joy: '#fbbf24',
+  anger: '#ef4444',
+  sadness: '#3b82f6',
+  happiness: '#ec4899',
+  surprise: '#a855f7',
+  fear: '#6b7280',
+  contemplation: '#6366f1',
+};
+
+const EMOTION_LABELS: Record<EmotionalType, string> = {
+  joy: '喜悦',
+  anger: '愤怒',
+  sadness: '悲伤',
+  happiness: '幸福',
+  surprise: '惊讶',
+  fear: '恐惧',
+  contemplation: '沉思',
+};
+
+interface EmotionalArcChartPanelProps {
+  novelId: string;
+  onClose: () => void;
+}
+
+export function EmotionalArcChartPanel({ novelId, onClose }: EmotionalArcChartPanelProps) {
+  const {
+    arcs,
+    selectedArcId,
+    loadArcs,
+    createArc,
+    addPoint,
+    deletePoint,
+    deleteArc,
+    selectArc,
+  } = useEmotionalArcStore();
+
+  const { currentNovel } = useNovelStore();
+  const { loadSummariesByNovelId } = useChapterSummaryStore();
+
+  const [isCreating, setIsCreating] = useState(false);
+  const [targetType, setTargetType] = useState<'novel' | 'character'>('novel');
+  const [selectedCharacterId, setSelectedCharacterId] = useState<string>('');
+  const [addingToChapterId, setAddingToChapterId] = useState<string | null>(null);
+  const [newEmotion, setNewEmotion] = useState<EmotionalType>('happiness');
+  const [newIntensity, setNewIntensity] = useState(50);
+  const [newNote, setNewNote] = useState('');
+
+  useEffect(() => {
+    loadArcs(novelId);
+    loadSummariesByNovelId(novelId);
+  }, [novelId, loadArcs, loadSummariesByNovelId]);
+
+  const selectedArc = arcs.find((a) => a.id === selectedArcId);
+
+  const allChapters = currentNovel?.volumes?.flatMap((v) =>
+    v.chapters?.map((c) => ({ ...c, volumeTitle: v.title })) || []
+  ) || [];
+
+  const handleCreate = async () => {
+    await createArc({
+      novelId,
+      targetType,
+      targetId: targetType === 'character' ? selectedCharacterId : undefined,
+    });
+    setIsCreating(false);
+  };
+
+  const handleAddPoint = async () => {
+    if (!selectedArcId || !addingToChapterId) return;
+    await addPoint(selectedArcId, {
+      chapterId: addingToChapterId,
+      emotion: newEmotion,
+      intensity: newIntensity,
+      note: newNote,
+    });
+    setAddingToChapterId(null);
+    setNewEmotion('happiness');
+    setNewIntensity(50);
+    setNewNote('');
+  };
+
+  const getChartData = () => {
+    if (!selectedArc) return [];
+    const sortedPoints = [...selectedArc.points].sort(
+      (a, b) => allChapters.findIndex((c) => c.id === a.chapterId) - allChapters.findIndex((c) => c.id === b.chapterId)
+    );
+    return sortedPoints.map((point) => {
+      const chapter = allChapters.find((c) => c.id === point.chapterId);
+      return {
+        name: chapter?.title || point.chapterId.slice(0, 8),
+        emotion: EMOTION_LABELS[point.emotion],
+        intensity: point.intensity,
+        color: EMOTION_COLORS[point.emotion],
+        note: point.note,
+      };
+    });
+  };
+
+  const chartData = getChartData();
+
+  return (
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-white dark:bg-gray-800 rounded-lg w-full max-w-6xl max-h-[90vh] mx-4 flex flex-col">
+        <div className="flex items-center justify-between p-4 border-b dark:border-gray-700">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+            情感弧度图表
+          </h2>
+          <button
+            onClick={onClose}
+            className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+          >
+            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div className="flex border-b dark:border-gray-700">
+          <div className="w-64 border-r dark:border-gray-700 overflow-y-auto max-h-64">
+            <div className="p-3 border-b dark:border-gray-700">
+              <button
+                onClick={() => setIsCreating(true)}
+                className="w-full py-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-md text-gray-500 hover:border-indigo-500 hover:text-indigo-500 text-sm"
+              >
+                + 新建弧线
+              </button>
+            </div>
+
+            {isCreating && (
+              <div className="p-3 border-b dark:border-gray-700 bg-gray-50 dark:bg-gray-700/50">
+                <div className="space-y-2">
+                  <select
+                    value={targetType}
+                    onChange={(e) => setTargetType(e.target.value as 'novel' | 'character')}
+                    className="w-full px-2 py-1 text-sm border rounded dark:bg-gray-700 dark:border-gray-600"
+                  >
+                    <option value="novel">整部小说</option>
+                    <option value="character">特定角色</option>
+                  </select>
+                  {targetType === 'character' && (
+                    <select
+                      value={selectedCharacterId}
+                      onChange={(e) => setSelectedCharacterId(e.target.value)}
+                      className="w-full px-2 py-1 text-sm border rounded dark:bg-gray-700 dark:border-gray-600"
+                    >
+                      <option value="">选择角色</option>
+                      {currentNovel?.characters?.map((char) => (
+                        <option key={char.id} value={char.id}>{char.name}</option>
+                      ))}
+                    </select>
+                  )}
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() => setIsCreating(false)}
+                      className="flex-1 px-2 py-1 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
+                    >
+                      取消
+                    </button>
+                    <button
+                      onClick={handleCreate}
+                      className="flex-1 px-2 py-1 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                    >
+                      创建
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {arcs.length === 0 && !isCreating ? (
+              <div className="p-4 text-sm text-gray-500 text-center">暂无情感弧线</div>
+            ) : (
+              arcs.map((arc) => (
+                <button
+                  key={arc.id}
+                  onClick={() => selectArc(arc.id)}
+                  className={`w-full text-left px-4 py-2 border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 ${
+                    selectedArcId === arc.id
+                      ? 'bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600'
+                      : 'text-gray-700 dark:text-gray-300'
+                  }`}
+                >
+                  <div className="text-sm font-medium">
+                    {arc.targetType === 'novel' ? '📖 小说情感' : '👤 角色情感'}
+                  </div>
+                  <div className="text-xs text-gray-400">
+                    {arc.points.length} 个数据点
+                  </div>
+                </button>
+              ))
+            )}
+          </div>
+
+          <div className="flex-1 p-4 overflow-y-auto max-h-64">
+            {selectedArc ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-medium text-gray-900 dark:text-white">
+                    {selectedArc.targetType === 'novel' ? '整部小说情感弧度' : '角色情感弧度'}
+                  </h3>
+                  <button
+                    onClick={() => deleteArc(selectedArc.id)}
+                    className="text-sm text-red-600 hover:text-red-800"
+                  >
+                    删除此弧线
+                  </button>
+                </div>
+
+                {chartData.length > 0 ? (
+                  <ResponsiveContainer width="100%" height={200}>
+                    <LineChart data={chartData}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                      <XAxis dataKey="name" stroke="#9ca3af" fontSize={12} />
+                      <YAxis domain={[0, 100]} stroke="#9ca3af" fontSize={12} />
+                      <Tooltip 
+                        contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: '8px' }}
+                        itemStyle={{ color: '#fff' }}
+                      />
+                      <Line
+                        type="monotone"
+                        dataKey="intensity"
+                        stroke="#6366f1"
+                        strokeWidth={2}
+                        dot={{ fill: '#6366f1', strokeWidth: 2 }}
+                      />
+                    </LineChart>
+                  </ResponsiveContainer>
+                ) : (
+                  <div className="text-center py-8 text-gray-500">暂无数据，添加情感点开始</div>
+                )}
+
+                <div className="mt-4">
+                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">添加情感点</h4>
+                  {addingToChapterId ? (
+                    <div className="space-y-2 p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                      <select
+                        value={newEmotion}
+                        onChange={(e) => setNewEmotion(e.target.value as EmotionalType)}
+                        className="w-full px-2 py-1 text-sm border rounded dark:bg-gray-700 dark:border-gray-600"
+                      >
+                        {(Object.keys(EMOTION_LABELS) as EmotionalType[]).map((emotion) => (
+                          <option key={emotion} value={emotion}>{EMOTION_LABELS[emotion]}</option>
+                        ))}
+                      </select>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm text-gray-500">强度:</span>
+                        <input
+                          type="range"
+                          min="0"
+                          max="100"
+                          value={newIntensity}
+                          onChange={(e) => setNewIntensity(Number(e.target.value))}
+                          className="flex-1"
+                        />
+                        <span className="text-sm font-medium w-8">{newIntensity}</span>
+                      </div>
+                      <input
+                        type="text"
+                        value={newNote}
+                        onChange={(e) => setNewNote(e.target.value)}
+                        placeholder="备注（可选）"
+                        className="w-full px-2 py-1 text-sm border rounded dark:bg-gray-700 dark:border-gray-600"
+                      />
+                      <div className="flex gap-2">
+                        <button
+                          onClick={() => setAddingToChapterId(null)}
+                          className="flex-1 px-2 py-1 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
+                        >
+                          取消
+                        </button>
+                        <button
+                          onClick={handleAddPoint}
+                          className="flex-1 px-2 py-1 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                        >
+                          添加
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <select
+                      value=""
+                      onChange={(e) => setAddingToChapterId(e.target.value)}
+                      className="w-full px-2 py-1 text-sm border rounded dark:bg-gray-700 dark:border-gray-600"
+                    >
+                      <option value="">选择章节添加情感点</option>
+                      {allChapters.map((chapter) => (
+                        <option key={chapter.id} value={chapter.id}>{chapter.title}</option>
+                      ))}
+                    </select>
+                  )}
+                </div>
+
+                {selectedArc.points.length > 0 && (
+                  <div className="mt-4">
+                    <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">情感点列表</h4>
+                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                      {selectedArc.points
+                        .sort((a, b) => allChapters.findIndex((c) => c.id === a.chapterId) - allChapters.findIndex((c) => c.id === b.chapterId))
+                        .map((point) => {
+                          const chapter = allChapters.find((c) => c.id === point.chapterId);
+                          return (
+                            <div
+                              key={point.id}
+                              className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700/50 rounded text-sm"
+                            >
+                              <div className="flex items-center gap-2">
+                                <span
+                                  className="w-3 h-3 rounded-full"
+                                  style={{ backgroundColor: EMOTION_COLORS[point.emotion] }}
+                                />
+                                <span className="text-gray-700 dark:text-gray-300">
+                                  {chapter?.title || '未知章节'}
+                                </span>
+                                <span className="text-gray-500">-</span>
+                                <span className="text-gray-600 dark:text-gray-400">{EMOTION_LABELS[point.emotion]}</span>
+                                <span className="text-gray-400">({point.intensity}%)</span>
+                              </div>
+                              <button
+                                onClick={() => deletePoint(selectedArc.id, point.id)}
+                                className="text-red-600 hover:text-red-800"
+                              >
+                                删除
+                              </button>
+                            </div>
+                          );
+                        })}
+                    </div>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                从左侧选择一条情感弧线查看图表
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="p-4 border-t dark:border-gray-700 flex justify-between items-center">
+          <div className="flex gap-4">
+            {(Object.keys(EMOTION_LABELS) as EmotionalType[]).map((emotion) => (
+              <div key={emotion} className="flex items-center gap-1">
+                <span
+                  className="w-3 h-3 rounded-full"
+                  style={{ backgroundColor: EMOTION_COLORS[emotion] }}
+                />
+                <span className="text-xs text-gray-600 dark:text-gray-400">{EMOTION_LABELS[emotion]}</span>
+              </div>
+            ))}
+          </div>
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+          >
+            关闭
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

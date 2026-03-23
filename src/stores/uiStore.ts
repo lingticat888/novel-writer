@@ -40,6 +40,10 @@ interface UIState {
   isSidequestProgressPanelOpen: boolean;
   openSidequestProgressPanel: () => void;
   closeSidequestProgressPanel: () => void;
+
+  isEmotionalArcChartPanelOpen: boolean;
+  openEmotionalArcChartPanel: () => void;
+  closeEmotionalArcChartPanel: () => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -141,5 +145,15 @@ export const useUIStore = create<UIState>((set) => ({
 
   closeSidequestProgressPanel: () => {
     set({ isSidequestProgressPanelOpen: false });
+  },
+
+  isEmotionalArcChartPanelOpen: false,
+
+  openEmotionalArcChartPanel: () => {
+    set({ isEmotionalArcChartPanelOpen: true });
+  },
+
+  closeEmotionalArcChartPanel: () => {
+    set({ isEmotionalArcChartPanelOpen: false });
   },
 }));

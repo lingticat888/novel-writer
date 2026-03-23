@@ -9,6 +9,7 @@ import { ResourceLedgerPanel } from '@/components/resource/ResourceLedgerPanel';
 import { PlotTrackerPanel } from '@/components/plot/PlotTrackerPanel';
 import { ChapterSummaryPanel } from '@/components/chapter/ChapterSummaryPanel';
 import { SidequestProgressPanel } from '@/components/sidequest/SidequestProgressPanel';
+import { EmotionalArcChartPanel } from '@/components/emotion/EmotionalArcChartPanel';
 import { exportService } from '@/services';
 
 export function NovelEditorPage() {
@@ -29,6 +30,7 @@ export function NovelEditorPage() {
     isPlotTrackerPanelOpen,
     isChapterSummaryPanelOpen,
     isSidequestProgressPanelOpen,
+    isEmotionalArcChartPanelOpen,
     openExportModal, 
     closeExportModal,
     openWorldStatePanel,
@@ -41,6 +43,8 @@ export function NovelEditorPage() {
     closeChapterSummaryPanel,
     openSidequestProgressPanel,
     closeSidequestProgressPanel,
+    openEmotionalArcChartPanel,
+    closeEmotionalArcChartPanel,
   } = useUIStore();
   const { isSaving } = useEditorStore();
 
@@ -135,6 +139,10 @@ export function NovelEditorPage() {
           🗺️ 支线
         </button>
         
+        <button onClick={openEmotionalArcChartPanel} className="px-3 py-1.5 text-sm bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-400 rounded-md hover:bg-rose-200 dark:hover:bg-rose-900/50">
+          📈 情感
+        </button>
+        
         <button
           onClick={openExportModal}
           className="px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600"
@@ -181,6 +189,10 @@ export function NovelEditorPage() {
 
       {isSidequestProgressPanelOpen && currentNovel && (
         <SidequestProgressPanel novelId={currentNovel.id} onClose={closeSidequestProgressPanel} />
+      )}
+
+      {isEmotionalArcChartPanelOpen && currentNovel && (
+        <EmotionalArcChartPanel novelId={currentNovel.id} onClose={closeEmotionalArcChartPanel} />
       )}
     </div>
   );
