@@ -13,10 +13,12 @@
   -moz-osx-font-smoothing: grayscale;
 }
 
-.dark {
-  color-scheme: dark;
-  color: #e5e5e5;
-  background-color: #1a1a2e;
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    color: #e5e5e5;
+    background-color: #1a1a2e;
+  }
 }
 
 * {
