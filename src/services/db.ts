@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie';
-import type { User, Novel, Volume, Chapter, Character, WorldState, ResourceLedger, UnresolvedPlot, ChapterSummary, SidequestProgress, EmotionalArc } from '@/models';
+import type { User, Novel, Volume, Chapter, Character, WorldState, ResourceLedger, UnresolvedPlot, ChapterSummary, SidequestProgress, EmotionalArc, CharacterInteraction } from '@/models';
 
 export class NovelWriterDB extends Dexie {
   users!: Table<User, string>;
@@ -13,6 +13,7 @@ export class NovelWriterDB extends Dexie {
   chapterSummaries!: Table<ChapterSummary, string>;
   sidequests!: Table<SidequestProgress, string>;
   emotionalArcs!: Table<EmotionalArc, string>;
+  characterInteractions!: Table<CharacterInteraction, string>;
 
   constructor() {
     super('NovelWriterDB');
@@ -96,6 +97,22 @@ export class NovelWriterDB extends Dexie {
       chapterSummaries: 'id, chapterId',
       sidequests: 'id, novelId, status',
       emotionalArcs: 'id, novelId',
+    });
+    this.version(8).stores({
+      users: 'id, email',
+      novels: 'id, userId, updatedAt',
+      volumes: 'id, novelId, order',
+      chapters: 'id, volumeId, order',
+      characters: 'id, novelId',
+      passwords: 'userId',
+      worldStates: 'id, novelId, category',
+      resourceLedgers: 'id, novelId',
+      resourceTransactions: 'id, resourceId, chapterId',
+      unresolvedPlots: 'id, novelId, status',
+      chapterSummaries: 'id, chapterId',
+      sidequests: 'id, novelId, status',
+      emotionalArcs: 'id, novelId',
+      characterInteractions: 'id, novelId',
     });
   }
 }

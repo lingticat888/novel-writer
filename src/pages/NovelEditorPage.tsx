@@ -10,6 +10,7 @@ import { PlotTrackerPanel } from '@/components/plot/PlotTrackerPanel';
 import { ChapterSummaryPanel } from '@/components/chapter/ChapterSummaryPanel';
 import { SidequestProgressPanel } from '@/components/sidequest/SidequestProgressPanel';
 import { EmotionalArcChartPanel } from '@/components/emotion/EmotionalArcChartPanel';
+import { CharacterInteractionMatrixPanel } from '@/components/interaction/CharacterInteractionMatrixPanel';
 import { exportService } from '@/services';
 
 export function NovelEditorPage() {
@@ -31,6 +32,7 @@ export function NovelEditorPage() {
     isChapterSummaryPanelOpen,
     isSidequestProgressPanelOpen,
     isEmotionalArcChartPanelOpen,
+    isCharacterInteractionMatrixPanelOpen,
     openExportModal, 
     closeExportModal,
     openWorldStatePanel,
@@ -45,6 +47,8 @@ export function NovelEditorPage() {
     closeSidequestProgressPanel,
     openEmotionalArcChartPanel,
     closeEmotionalArcChartPanel,
+    openCharacterInteractionMatrixPanel,
+    closeCharacterInteractionMatrixPanel,
   } = useUIStore();
   const { isSaving } = useEditorStore();
 
@@ -143,6 +147,10 @@ export function NovelEditorPage() {
           📈 情感
         </button>
         
+        <button onClick={openCharacterInteractionMatrixPanel} className="px-3 py-1.5 text-sm bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-400 rounded-md hover:bg-cyan-200 dark:hover:bg-cyan-900/50">
+          🔗 角色
+        </button>
+        
         <button
           onClick={openExportModal}
           className="px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600"
@@ -193,6 +201,10 @@ export function NovelEditorPage() {
 
       {isEmotionalArcChartPanelOpen && currentNovel && (
         <EmotionalArcChartPanel novelId={currentNovel.id} onClose={closeEmotionalArcChartPanel} />
+      )}
+
+      {isCharacterInteractionMatrixPanelOpen && currentNovel && (
+        <CharacterInteractionMatrixPanel novelId={currentNovel.id} onClose={closeCharacterInteractionMatrixPanel} />
       )}
     </div>
   );

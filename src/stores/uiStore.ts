@@ -44,6 +44,10 @@ interface UIState {
   isEmotionalArcChartPanelOpen: boolean;
   openEmotionalArcChartPanel: () => void;
   closeEmotionalArcChartPanel: () => void;
+
+  isCharacterInteractionMatrixPanelOpen: boolean;
+  openCharacterInteractionMatrixPanel: () => void;
+  closeCharacterInteractionMatrixPanel: () => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -155,5 +159,15 @@ export const useUIStore = create<UIState>((set) => ({
 
   closeEmotionalArcChartPanel: () => {
     set({ isEmotionalArcChartPanelOpen: false });
+  },
+
+  isCharacterInteractionMatrixPanelOpen: false,
+
+  openCharacterInteractionMatrixPanel: () => {
+    set({ isCharacterInteractionMatrixPanelOpen: true });
+  },
+
+  closeCharacterInteractionMatrixPanel: () => {
+    set({ isCharacterInteractionMatrixPanelOpen: false });
   },
 }));
