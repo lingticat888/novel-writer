@@ -76,6 +76,11 @@ export function Sidebar({ onAddVolume, onAddChapter }: SidebarProps) {
     selectVolume(currentVolume);
   };
 
+  const wrappedOnAddChapter = async (volumeId: string) => {
+    await onAddChapter(volumeId);
+    setExpandedVolumes((prev) => new Set([...prev, volumeId]));
+  };
+
   const handleDoubleClick = (type: 'volume' | 'chapter', item: Volume | Chapter) => {
     setEditingId({ type, id: item.id });
     setEditValue(item.title);
@@ -180,7 +185,7 @@ export function Sidebar({ onAddVolume, onAddChapter }: SidebarProps) {
                     onEditChange={setEditValue}
                     onEditSubmit={handleEditSubmit}
                     onDelete={(e) => handleDelete('volume', volume.id, e)}
-                    onAddChapter={() => onAddChapter(volume.id)}
+                    onAddChapter={() => wrappedOnAddChapter(volume.id)}
                     onChapterSelect={handleChapterClick}
                     onChapterDoubleClick={(chapter) => handleDoubleClick('chapter', chapter)}
                     onChapterDelete={(e, chapterId) => handleDelete('chapter', chapterId, e)}
