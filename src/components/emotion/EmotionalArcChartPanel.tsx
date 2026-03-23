@@ -58,6 +58,7 @@ export function EmotionalArcChartPanel({ novelId, onClose }: EmotionalArcChartPa
     loadArcs,
     createArc,
     addPoint,
+    updatePoint,
     deletePoint,
     deleteArc,
     selectArc,
@@ -69,6 +70,7 @@ export function EmotionalArcChartPanel({ novelId, onClose }: EmotionalArcChartPa
   const [targetType, setTargetType] = useState<'novel' | 'character'>('novel');
   const [selectedCharacterId, setSelectedCharacterId] = useState<string>('');
   const [addingToChapterId, setAddingToChapterId] = useState<string | null>(null);
+  const [editingPointId, setEditingPointId] = useState<string | null>(null);
   const [newEmotion, setNewEmotion] = useState<EmotionalType>('thrill');
   const [newIntensity, setNewIntensity] = useState(50);
   const [newNote, setNewNote] = useState('');
@@ -100,6 +102,35 @@ export function EmotionalArcChartPanel({ novelId, onClose }: EmotionalArcChartPa
       intensity: newIntensity,
       note: newNote,
     });
+    setAddingToChapterId(null);
+    setNewEmotion('thrill');
+    setNewIntensity(50);
+    setNewNote('');
+  };
+
+  const handleUpdatePoint = async () => {
+    if (!selectedArcId || !editingPointId) return;
+    await updatePoint(selectedArcId, editingPointId, {
+      emotion: newEmotion,
+      intensity: newIntensity,
+      note: newNote,
+    });
+    setEditingPointId(null);
+    setNewEmotion('thrill');
+    setNewIntensity(50);
+    setNewNote('');
+  };
+
+  const startEditingPoint = (pointId: string, emotion: EmotionalType, intensity: number, note: string) => {
+    setEditingPointId(pointId);
+    setAddingToChapterId(null);
+    setNewEmotion(emotion);
+    setNewIntensity(intensity);
+    setNewNote(note);
+  };
+
+  const cancelEditing = () => {
+    setEditingPointId(null);
     setAddingToChapterId(null);
     setNewEmotion('thrill');
     setNewIntensity(50);
@@ -355,7 +386,7 @@ export function EmotionalArcChartPanel({ novelId, onClose }: EmotionalArcChartPa
                 {selectedArc.points.length > 0 && (
                   <div className="mt-4">
                     <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">情感点列表</h4>
-                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                    <div className="space-y-2 max-h-60 overflow-y-auto">
                       {selectedArc.points
                         .sort((a, b) => allChapters.findIndex((c) => c.id === a.chapterId) - allChapters.findIndex((c) => c.id === b.chapterId))
                         .map((point) => {
@@ -363,26 +394,95 @@ export function EmotionalArcChartPanel({ novelId, onClose }: EmotionalArcChartPa
                           return (
                             <div
                               key={point.id}
-                              className="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-700/50 rounded text-sm"
+                              className="p-2 bg-gray-50 dark:bg-gray-700/50 rounded text-sm"
                             >
-                              <div className="flex items-center gap-2">
-                                <span
-                                  className="w-3 h-3 rounded-full"
-                                  style={{ backgroundColor: EMOTION_COLORS[point.emotion] }}
-                                />
-                                <span className="text-gray-700 dark:text-gray-300">
-                                  {chapter?.title || '未知章节'}
-                                </span>
-                                <span className="text-gray-500">-</span>
-                                <span className="text-gray-600 dark:text-gray-400">{EMOTION_LABELS[point.emotion]}</span>
-                                <span className="text-gray-400">({point.intensity}%)</span>
-                              </div>
-                              <button
-                                onClick={() => deletePoint(selectedArc.id, point.id)}
-                                className="text-red-600 hover:text-red-800"
-                              >
-                                删除
-                              </button>
+                              {editingPointId === point.id ? (
+                                <div className="space-y-2">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <span className="text-xs text-gray-500">
+                                      正在编辑: {chapter?.title || '未知章节'}
+                                    </span>
+                                  </div>
+                                  <div className="flex flex-wrap gap-1 mb-1">
+                                    {[...POSITIVE_EMOTIONS, ...NEGATIVE_EMOTIONS].map((emotion) => (
+                                      <button
+                                        key={emotion}
+                                        onClick={() => setNewEmotion(emotion)}
+                                        className={`px-1.5 py-0.5 text-xs rounded-full ${
+                                          newEmotion === emotion
+                                            ? 'text-white'
+                                            : 'bg-gray-200 dark:bg-gray-600 text-gray-700 dark:text-gray-300'
+                                        }`}
+                                        style={newEmotion === emotion ? { backgroundColor: EMOTION_COLORS[emotion] } : {}}
+                                      >
+                                        {EMOTION_LABELS[emotion]}
+                                      </button>
+                                    ))}
+                                  </div>
+                                  <div className="flex items-center gap-2">
+                                    <span className="text-xs text-gray-500">强度:</span>
+                                    <input
+                                      type="range"
+                                      min="0"
+                                      max="100"
+                                      value={newIntensity}
+                                      onChange={(e) => setNewIntensity(Number(e.target.value))}
+                                      className="flex-1 h-1"
+                                    />
+                                    <span className="text-xs w-6">{newIntensity}</span>
+                                  </div>
+                                  <input
+                                    type="text"
+                                    value={newNote}
+                                    onChange={(e) => setNewNote(e.target.value)}
+                                    placeholder="备注"
+                                    className="w-full px-2 py-1 text-xs border rounded dark:bg-gray-700 dark:border-gray-600"
+                                  />
+                                  <div className="flex gap-2">
+                                    <button
+                                      onClick={cancelEditing}
+                                      className="flex-1 px-2 py-1 text-xs text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
+                                    >
+                                      取消
+                                    </button>
+                                    <button
+                                      onClick={handleUpdatePoint}
+                                      className="flex-1 px-2 py-1 text-xs bg-indigo-600 text-white rounded hover:bg-indigo-700"
+                                    >
+                                      保存
+                                    </button>
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="flex items-center justify-between">
+                                  <div className="flex items-center gap-2">
+                                    <span
+                                      className="w-3 h-3 rounded-full"
+                                      style={{ backgroundColor: EMOTION_COLORS[point.emotion] }}
+                                    />
+                                    <span className="text-gray-700 dark:text-gray-300">
+                                      {chapter?.title || '未知章节'}
+                                    </span>
+                                    <span className="text-gray-500">-</span>
+                                    <span className="text-gray-600 dark:text-gray-400">{EMOTION_LABELS[point.emotion]}</span>
+                                    <span className="text-gray-400">({point.intensity}%)</span>
+                                  </div>
+                                  <div className="flex gap-2">
+                                    <button
+                                      onClick={() => startEditingPoint(point.id, point.emotion, point.intensity, point.note || '')}
+                                      className="text-blue-600 hover:text-blue-800 text-xs"
+                                    >
+                                      编辑
+                                    </button>
+                                    <button
+                                      onClick={() => deletePoint(selectedArc.id, point.id)}
+                                      className="text-red-600 hover:text-red-800 text-xs"
+                                    >
+                                      删除
+                                    </button>
+                                  </div>
+                                </div>
+                              )}
                             </div>
                           );
                         })}
