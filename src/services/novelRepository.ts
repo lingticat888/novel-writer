@@ -181,6 +181,46 @@ export class NovelRepository {
     return novel;
   }
 
+  async reorderVolumes(novelId: string, volumeIds: string[]): Promise<void> {
+    await db.transaction('rw', db.volumes, async () => {
+      for (let i = 0; i < volumeIds.length; i++) {
+        await db.volumes.update(volumeIds[i], { order: i, updatedAt: new Date() });
+      }
+      await db.novels.update(novelId, { updatedAt: new Date() });
+    });
+  }
+
+  async reorderChapters(volumeId: string, chapterIds: string[]): Promise<void> {
+    const volume = await db.volumes.get(volumeId);
+    await db.transaction('rw', db.chapters, async () => {
+      for (let i = 0; i < chapterIds.length; i++) {
+        await db.chapters.update(chapterIds[i], { order: i, updatedAt: new Date() });
+      }
+      if (volume) {
+        await db.novels.update(volume.novelId, { updatedAt: new Date() });
+      }
+    });
+  }
+
+  async moveChapterToVolume(chapterId: string, targetVolumeId: string): Promise<void> {
+    const chapter = await db.chapters.get(chapterId);
+    if (!chapter) return;
+
+    const targetVolume = await db.volumes.get(targetVolumeId);
+    if (!targetVolume) return;
+
+    const chaptersInTarget = await db.chapters.where('volumeId').equals(targetVolumeId).toArray();
+
+    await db.transaction('rw', [db.chapters, db.volumes, db.novels], async () => {
+      await db.chapters.update(chapterId, {
+        volumeId: targetVolumeId,
+        order: chaptersInTarget.length,
+        updatedAt: new Date(),
+      });
+      await db.novels.update(targetVolume.novelId, { updatedAt: new Date() });
+    });
+  }
+
   private countWords(text: string): number {
     const cleaned = text.replace(/<[^>]*>/g, '').replace(/\s+/g, ' ').trim();
     if (!cleaned) return 0;

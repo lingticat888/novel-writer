@@ -21,6 +21,9 @@ interface NovelState {
   updateVolume: (volumeId: string, data: Partial<Pick<Volume, 'title' | 'order'>>) => Promise<void>;
   deleteVolume: (volumeId: string) => Promise<void>;
   selectVolume: (volume: Volume | null) => void;
+  reorderVolumes: (novelId: string, volumeIds: string[]) => Promise<void>;
+  reorderChapters: (volumeId: string, chapterIds: string[]) => Promise<void>;
+  moveChapterToVolume: (chapterId: string, targetVolumeId: string) => Promise<void>;
 
   addChapter: (volumeId: string, title: string) => Promise<Chapter>;
   updateChapter: (chapterId: string, data: Partial<Pick<Chapter, 'title' | 'content' | 'order'>>) => Promise<void>;
@@ -213,6 +216,71 @@ export const useNovelStore = create<NovelState>((set) => ({
 
   selectChapter: (chapter: Chapter | null) => {
     set({ currentChapter: chapter });
+  },
+
+  reorderVolumes: async (novelId: string, volumeIds: string[]) => {
+    try {
+      await novelRepository.reorderVolumes(novelId, volumeIds);
+      set((state) => {
+        const reordered = volumeIds
+          .map((id) => state.volumes.find((v) => v.id === id))
+          .filter((v): v is Volume => v !== undefined)
+          .map((v, i) => ({ ...v, order: i }));
+        return { volumes: reordered };
+      });
+    } catch (error) {
+      set({ error: '重新排序失败' });
+    }
+  },
+
+  reorderChapters: async (volumeId: string, chapterIds: string[]) => {
+    try {
+      await novelRepository.reorderChapters(volumeId, chapterIds);
+      set((state) => ({
+        volumes: state.volumes.map((v) => {
+          if (v.id !== volumeId) return v;
+          const reordered = chapterIds
+            .map((id) => v.chapters?.find((c) => c.id === id))
+            .filter((c): c is Chapter => c !== undefined)
+            .map((c, i) => ({ ...c, order: i }));
+          return { ...v, chapters: reordered };
+        }),
+      }));
+    } catch (error) {
+      set({ error: '重新排序失败' });
+    }
+  },
+
+  moveChapterToVolume: async (chapterId: string, targetVolumeId: string) => {
+    try {
+      await novelRepository.moveChapterToVolume(chapterId, targetVolumeId);
+      const chapter = await novelRepository.getChapterById(chapterId);
+      if (!chapter) return;
+
+      set((state) => {
+        let movedChapter: Chapter | null = null;
+        const updatedVolumes = state.volumes.map((v) => {
+          const chapterInVolume = v.chapters?.find((c) => c.id === chapterId);
+          if (chapterInVolume) {
+            movedChapter = { ...chapterInVolume, volumeId: targetVolumeId };
+            return {
+              ...v,
+              chapters: v.chapters?.filter((c) => c.id !== chapterId),
+            };
+          }
+          if (v.id === targetVolumeId && movedChapter) {
+            return {
+              ...v,
+              chapters: [...(v.chapters || []), movedChapter],
+            };
+          }
+          return v;
+        });
+        return { volumes: updatedVolumes };
+      });
+    } catch (error) {
+      set({ error: '移动章节失败' });
+    }
   },
 
   clearError: () => {

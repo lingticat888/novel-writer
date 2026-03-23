@@ -4,6 +4,7 @@ interface UIState {
   isSidebarOpen: boolean;
   isCreateNovelModalOpen: boolean;
   isDeleteConfirmModalOpen: boolean;
+  isExportModalOpen: boolean;
   deleteTargetId: string | null;
   deleteTargetType: 'novel' | 'volume' | 'chapter' | null;
 
@@ -16,12 +17,16 @@ interface UIState {
   
   openDeleteConfirmModal: (id: string, type: 'novel' | 'volume' | 'chapter') => void;
   closeDeleteConfirmModal: () => void;
+
+  openExportModal: () => void;
+  closeExportModal: () => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
   isSidebarOpen: true,
   isCreateNovelModalOpen: false,
   isDeleteConfirmModalOpen: false,
+  isExportModalOpen: false,
   deleteTargetId: null,
   deleteTargetType: null,
 
@@ -59,5 +64,13 @@ export const useUIStore = create<UIState>((set) => ({
       deleteTargetId: null, 
       deleteTargetType: null 
     });
+  },
+
+  openExportModal: () => {
+    set({ isExportModalOpen: true });
+  },
+
+  closeExportModal: () => {
+    set({ isExportModalOpen: false });
   },
 }));
