@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { useEmotionalArcStore, useNovelStore } from '@/stores';
 import type { EmotionalType } from '@/models';
 import { POSITIVE_EMOTIONS, NEGATIVE_EMOTIONS } from '@/models';
@@ -113,12 +113,14 @@ export function EmotionalArcChartPanel({ novelId, onClose }: EmotionalArcChartPa
     );
     return sortedPoints.map((point) => {
       const chapter = allChapters.find((c) => c.id === point.chapterId);
+      const isNegative = NEGATIVE_EMOTIONS.includes(point.emotion);
       return {
         name: chapter?.title || point.chapterId.slice(0, 8),
         emotion: EMOTION_LABELS[point.emotion],
-        intensity: point.intensity,
+        intensity: isNegative ? -point.intensity : point.intensity,
         color: EMOTION_COLORS[point.emotion],
         note: point.note,
+        isNegative,
       };
     });
   };
@@ -238,17 +240,21 @@ export function EmotionalArcChartPanel({ novelId, onClose }: EmotionalArcChartPa
                     <LineChart data={chartData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                       <XAxis dataKey="name" stroke="#9ca3af" fontSize={12} />
-                      <YAxis domain={[0, 100]} stroke="#9ca3af" fontSize={12} />
+                      <YAxis domain={[-100, 100]} ticks={[-100, -50, 0, 50, 100]} stroke="#9ca3af" fontSize={12} />
                       <Tooltip 
                         contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: '8px' }}
                         itemStyle={{ color: '#fff' }}
+                        formatter={(value) => [`${Math.abs(Number(value))}%`, '强度']}
+                        labelFormatter={(label) => `章节: ${label}`}
                       />
+                      <ReferenceLine y={0} stroke="#6b7280" strokeWidth={2} />
                       <Line
                         type="monotone"
                         dataKey="intensity"
                         stroke="#6366f1"
                         strokeWidth={2}
-                        dot={{ fill: '#6366f1', strokeWidth: 2 }}
+                        dot={{ fill: '#6366f1', strokeWidth: 2, r: 4 }}
+                        activeDot={{ r: 6 }}
                       />
                     </LineChart>
                   </ResponsiveContainer>
