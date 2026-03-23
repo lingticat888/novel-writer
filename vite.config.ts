@@ -9,6 +9,7 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  base: '/novel-writer/',
   server: {
     allowedHosts: ['.monkeycode-ai.online'],
   },
