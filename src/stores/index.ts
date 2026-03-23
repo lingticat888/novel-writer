@@ -5,3 +5,4 @@ export { useUIStore } from './uiStore';
 export { useWorldStateStore } from './worldStateStore';
 export { useResourceLedgerStore } from './resourceLedgerStore';
 export { usePlotStore } from './plotStore';
+export { useChapterSummaryStore } from './chapterSummaryStore';

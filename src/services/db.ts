@@ -1,5 +1,5 @@
 import Dexie, { type Table } from 'dexie';
-import type { User, Novel, Volume, Chapter, Character, WorldState, ResourceLedger, UnresolvedPlot } from '@/models';
+import type { User, Novel, Volume, Chapter, Character, WorldState, ResourceLedger, UnresolvedPlot, ChapterSummary } from '@/models';
 
 export class NovelWriterDB extends Dexie {
   users!: Table<User, string>;
@@ -10,6 +10,7 @@ export class NovelWriterDB extends Dexie {
   worldStates!: Table<WorldState, string>;
   resourceLedgers!: Table<ResourceLedger, string>;
   unresolvedPlots!: Table<UnresolvedPlot, string>;
+  chapterSummaries!: Table<ChapterSummary, string>;
 
   constructor() {
     super('NovelWriterDB');
@@ -51,6 +52,19 @@ export class NovelWriterDB extends Dexie {
       resourceLedgers: 'id, novelId',
       resourceTransactions: 'id, resourceId, chapterId',
       unresolvedPlots: 'id, novelId, status',
+    });
+    this.version(5).stores({
+      users: 'id, email',
+      novels: 'id, userId, updatedAt',
+      volumes: 'id, novelId, order',
+      chapters: 'id, volumeId, order',
+      characters: 'id, novelId',
+      passwords: 'userId',
+      worldStates: 'id, novelId, category',
+      resourceLedgers: 'id, novelId',
+      resourceTransactions: 'id, resourceId, chapterId',
+      unresolvedPlots: 'id, novelId, status',
+      chapterSummaries: 'id, chapterId',
     });
   }
 }

@@ -7,6 +7,7 @@ import { StatusBar } from '@/components/layout/StatusBar';
 import { WorldStatePanel } from '@/components/world/WorldStatePanel';
 import { ResourceLedgerPanel } from '@/components/resource/ResourceLedgerPanel';
 import { PlotTrackerPanel } from '@/components/plot/PlotTrackerPanel';
+import { ChapterSummaryPanel } from '@/components/chapter/ChapterSummaryPanel';
 import { exportService } from '@/services';
 
 export function NovelEditorPage() {
@@ -25,6 +26,7 @@ export function NovelEditorPage() {
     isWorldStatePanelOpen,
     isResourceLedgerPanelOpen,
     isPlotTrackerPanelOpen,
+    isChapterSummaryPanelOpen,
     openExportModal, 
     closeExportModal,
     openWorldStatePanel,
@@ -33,6 +35,8 @@ export function NovelEditorPage() {
     closeResourceLedgerPanel,
     openPlotTrackerPanel,
     closePlotTrackerPanel,
+    openChapterSummaryPanel,
+    closeChapterSummaryPanel,
   } = useUIStore();
   const { isSaving } = useEditorStore();
 
@@ -119,6 +123,10 @@ export function NovelEditorPage() {
           🌍 世界
         </button>
         
+        <button onClick={openChapterSummaryPanel} className="px-3 py-1.5 text-sm bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded-md hover:bg-blue-200 dark:hover:bg-blue-900/50">
+          📋 摘要
+        </button>
+        
         <button
           onClick={openExportModal}
           className="px-3 py-1.5 text-sm bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-200 dark:hover:bg-gray-600"
@@ -157,6 +165,10 @@ export function NovelEditorPage() {
 
       {isPlotTrackerPanelOpen && currentNovel && (
         <PlotTrackerPanel novelId={currentNovel.id} onClose={closePlotTrackerPanel} />
+      )}
+
+      {isChapterSummaryPanelOpen && currentNovel && (
+        <ChapterSummaryPanel novelId={currentNovel.id} onClose={closeChapterSummaryPanel} />
       )}
     </div>
   );

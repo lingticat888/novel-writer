@@ -32,6 +32,10 @@ interface UIState {
   isPlotTrackerPanelOpen: boolean;
   openPlotTrackerPanel: () => void;
   closePlotTrackerPanel: () => void;
+
+  isChapterSummaryPanelOpen: boolean;
+  openChapterSummaryPanel: () => void;
+  closeChapterSummaryPanel: () => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -113,5 +117,15 @@ export const useUIStore = create<UIState>((set) => ({
 
   closePlotTrackerPanel: () => {
     set({ isPlotTrackerPanelOpen: false });
+  },
+
+  isChapterSummaryPanelOpen: false,
+
+  openChapterSummaryPanel: () => {
+    set({ isChapterSummaryPanelOpen: true });
+  },
+
+  closeChapterSummaryPanel: () => {
+    set({ isChapterSummaryPanelOpen: false });
   },
 }));
