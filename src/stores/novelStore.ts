@@ -79,9 +79,9 @@ export const useNovelStore = create<NovelState>((set) => ({
         isLoading: false,
       }));
       return novel;
-    } catch {
+    } catch (err) {
       set({ error: '创建作品失败', isLoading: false });
-      throw error;
+      throw err;
     }
   },
 
@@ -125,9 +125,9 @@ export const useNovelStore = create<NovelState>((set) => ({
           : state.currentNovel,
       }));
       return volume;
-    } catch {
+    } catch (err) {
       set({ error: '添加卷失败' });
-      throw error;
+      throw err;
     }
   },
 
@@ -180,9 +180,9 @@ export const useNovelStore = create<NovelState>((set) => ({
         };
       });
       return chapter;
-    } catch {
+    } catch (err) {
       set({ error: '添加章节失败' });
-      throw error;
+      throw err;
     }
   },
 

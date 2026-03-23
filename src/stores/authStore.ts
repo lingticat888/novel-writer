@@ -43,8 +43,8 @@ export const useAuthStore = create<AuthState>()(
         try {
           const user = await userRepository.create(data);
           set({ user, isAuthenticated: true, isLoading: false });
-        } catch {
-          set({ error: error instanceof Error ? error.message : '注册失败', isLoading: false });
+        } catch (err) {
+          set({ error: err instanceof Error ? err.message : '注册失败', isLoading: false });
         }
       },
 

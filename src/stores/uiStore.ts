@@ -5,6 +5,7 @@ interface UIState {
   isCreateNovelModalOpen: boolean;
   isDeleteConfirmModalOpen: boolean;
   isExportModalOpen: boolean;
+  isWorldStatePanelOpen: boolean;
   deleteTargetId: string | null;
   deleteTargetType: 'novel' | 'volume' | 'chapter' | null;
 
@@ -20,6 +21,9 @@ interface UIState {
 
   openExportModal: () => void;
   closeExportModal: () => void;
+
+  openWorldStatePanel: () => void;
+  closeWorldStatePanel: () => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -27,6 +31,7 @@ export const useUIStore = create<UIState>((set) => ({
   isCreateNovelModalOpen: false,
   isDeleteConfirmModalOpen: false,
   isExportModalOpen: false,
+  isWorldStatePanelOpen: false,
   deleteTargetId: null,
   deleteTargetType: null,
 
@@ -72,5 +77,13 @@ export const useUIStore = create<UIState>((set) => ({
 
   closeExportModal: () => {
     set({ isExportModalOpen: false });
+  },
+
+  openWorldStatePanel: () => {
+    set({ isWorldStatePanelOpen: true });
+  },
+
+  closeWorldStatePanel: () => {
+    set({ isWorldStatePanelOpen: false });
   },
 }));

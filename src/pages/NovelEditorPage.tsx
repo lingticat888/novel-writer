@@ -4,6 +4,7 @@ import { useNovelStore, useUIStore, useEditorStore } from '@/stores';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { EditorPane } from '@/components/layout/EditorPane';
 import { StatusBar } from '@/components/layout/StatusBar';
+import { WorldStatePanel } from '@/components/world/WorldStatePanel';
 import { exportService } from '@/services';
 
 export function NovelEditorPage() {
@@ -16,7 +17,15 @@ export function NovelEditorPage() {
     addChapter,
     isLoading 
   } = useNovelStore();
-  const { isSidebarOpen, isExportModalOpen, openExportModal, closeExportModal } = useUIStore();
+  const { 
+    isSidebarOpen, 
+    isExportModalOpen, 
+    isWorldStatePanelOpen,
+    openExportModal, 
+    closeExportModal,
+    openWorldStatePanel,
+    closeWorldStatePanel,
+  } = useUIStore();
   const { isSaving } = useEditorStore();
 
   useEffect(() => {
@@ -89,6 +98,15 @@ export function NovelEditorPage() {
           </h1>
         </div>
         <button
+          onClick={openWorldStatePanel}
+          className="px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md flex items-center gap-1"
+        >
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935v5.38a2 2 0 01-1.632 1.857c-.71.343-1.504.668-2.372 1.003a23.498 23.498 0 01-4.242 1.82 3.987 3.987 0 01-2.541-.81 3.975 3.975 0 01-3.328 0 3.987 3.987 0 01-2.541.81 23.498 23.498 0 01-4.242-1.82 3.987 3.987 0 01-1.632-1.857V6a2 2 0 012-2h2c.81 0 1.576.23 2.272.628M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          世界
+        </button>
+        <button
           onClick={openExportModal}
           className="px-3 py-1.5 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md flex items-center gap-1"
         >
@@ -116,6 +134,13 @@ export function NovelEditorPage() {
 
       {isExportModalOpen && (
         <ExportModal onClose={closeExportModal} onExport={handleExport} />
+      )}
+
+      {isWorldStatePanelOpen && currentNovel && (
+        <WorldStatePanel
+          novelId={currentNovel.id}
+          onClose={closeWorldStatePanel}
+        />
       )}
     </div>
   );
