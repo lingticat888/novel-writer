@@ -28,6 +28,10 @@ interface UIState {
   isResourceLedgerPanelOpen: boolean;
   openResourceLedgerPanel: () => void;
   closeResourceLedgerPanel: () => void;
+
+  isPlotTrackerPanelOpen: boolean;
+  openPlotTrackerPanel: () => void;
+  closePlotTrackerPanel: () => void;
 }
 
 export const useUIStore = create<UIState>((set) => ({
@@ -99,5 +103,15 @@ export const useUIStore = create<UIState>((set) => ({
 
   closeResourceLedgerPanel: () => {
     set({ isResourceLedgerPanelOpen: false });
+  },
+
+  isPlotTrackerPanelOpen: false,
+
+  openPlotTrackerPanel: () => {
+    set({ isPlotTrackerPanelOpen: true });
+  },
+
+  closePlotTrackerPanel: () => {
+    set({ isPlotTrackerPanelOpen: false });
   },
 }));
