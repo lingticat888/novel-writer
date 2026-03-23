@@ -29,6 +29,7 @@ export function PlotTrackerPanel({ novelId, onClose }: PlotTrackerPanelProps) {
 
   const [isCreating, setIsCreating] = useState(false);
   const [newContent, setNewContent] = useState('');
+  const [editingPlotId, setEditingPlotId] = useState<string | null>(null);
   const [resolveChapterId, setResolveChapterId] = useState('');
   const [resolveDescription, setResolveDescription] = useState('');
 
@@ -50,6 +51,19 @@ export function PlotTrackerPanel({ novelId, onClose }: PlotTrackerPanelProps) {
   const handleResolve = async (plotId: string) => {
     if (!resolveChapterId || !resolveDescription) return;
     await resolvePlot(plotId, resolveChapterId, resolveDescription);
+    setResolveChapterId('');
+    setResolveDescription('');
+    setEditingPlotId(null);
+  };
+
+  const startEditing = (plotId: string) => {
+    setEditingPlotId(plotId);
+    setResolveChapterId('');
+    setResolveDescription('');
+  };
+
+  const cancelEditing = () => {
+    setEditingPlotId(null);
     setResolveChapterId('');
     setResolveDescription('');
   };
@@ -136,26 +150,43 @@ export function PlotTrackerPanel({ novelId, onClose }: PlotTrackerPanelProps) {
                       <p className="text-gray-900 dark:text-white">{plot.content}</p>
                       {plot.status === 'buried' && (
                         <div className="mt-3 flex gap-2">
-                          <input
-                            type="text"
-                            value={resolveChapterId}
-                            onChange={(e) => setResolveChapterId(e.target.value)}
-                            placeholder="回收章节ID"
-                            className="flex-1 px-2 py-1 text-sm border rounded dark:bg-gray-700 dark:border-gray-600"
-                          />
-                          <input
-                            type="text"
-                            value={resolveDescription}
-                            onChange={(e) => setResolveDescription(e.target.value)}
-                            placeholder="回收描述"
-                            className="flex-1 px-2 py-1 text-sm border rounded dark:bg-gray-700 dark:border-gray-600"
-                          />
-                          <button
-                            onClick={() => handleResolve(plot.id)}
-                            className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700"
-                          >
-                            标记回收
-                          </button>
+                          {editingPlotId === plot.id ? (
+                            <>
+                              <input
+                                type="text"
+                                value={resolveChapterId}
+                                onChange={(e) => setResolveChapterId(e.target.value)}
+                                placeholder="回收章节ID"
+                                className="flex-1 px-2 py-1 text-sm border rounded dark:bg-gray-700 dark:border-gray-600"
+                              />
+                              <input
+                                type="text"
+                                value={resolveDescription}
+                                onChange={(e) => setResolveDescription(e.target.value)}
+                                placeholder="回收描述"
+                                className="flex-1 px-2 py-1 text-sm border rounded dark:bg-gray-700 dark:border-gray-600"
+                              />
+                              <button
+                                onClick={() => handleResolve(plot.id)}
+                                className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700"
+                              >
+                                保存
+                              </button>
+                              <button
+                                onClick={cancelEditing}
+                                className="px-3 py-1 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                              >
+                                取消
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              onClick={() => startEditing(plot.id)}
+                              className="px-3 py-1 text-sm bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded hover:bg-green-200 dark:hover:bg-green-900/50"
+                            >
+                              标记回收
+                            </button>
+                          )}
                         </div>
                       )}
                       {plot.status === 'resolved' && plot.resolveDescription && (
