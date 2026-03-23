@@ -138,14 +138,14 @@ export function PlotTrackerPanel({ novelId, onClose }: PlotTrackerPanelProps) {
                         <div className="mt-3 flex gap-2">
                           <input
                             type="text"
-                            value={resolveChapterId === plot.id ? resolveChapterId : ''}
+                            value={resolveChapterId}
                             onChange={(e) => setResolveChapterId(e.target.value)}
                             placeholder="回收章节ID"
                             className="flex-1 px-2 py-1 text-sm border rounded dark:bg-gray-700 dark:border-gray-600"
                           />
                           <input
                             type="text"
-                            value={resolveDescription === plot.id ? resolveDescription : ''}
+                            value={resolveDescription}
                             onChange={(e) => setResolveDescription(e.target.value)}
                             placeholder="回收描述"
                             className="flex-1 px-2 py-1 text-sm border rounded dark:bg-gray-700 dark:border-gray-600"
