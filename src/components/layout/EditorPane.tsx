@@ -1,0 +1,208 @@
+import { useEffect, useCallback, useRef } from 'react';
+import { useNovelStore, useEditorStore } from '@/stores';
+import { useEditor, EditorContent } from '@tiptap/react';
+import StarterKit from '@tiptap/starter-kit';
+import Placeholder from '@tiptap/extension-placeholder';
+import Typography from '@tiptap/extension-typography';
+
+export function EditorPane() {
+  const { currentChapter, updateChapter } = useNovelStore();
+  const { setContent, setSaving, setLastSavedAt } = useEditorStore();
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastSavedContentRef = useRef<string>('');
+
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      Placeholder.configure({
+        placeholder: '开始写作...',
+      }),
+      Typography,
+    ],
+    content: currentChapter?.content || '',
+    onUpdate: ({ editor }) => {
+      const html = editor.getHTML();
+      setContent(html);
+    },
+  });
+
+  useEffect(() => {
+    if (currentChapter && editor) {
+      const content = currentChapter.content || '';
+      if (editor.getHTML() !== content) {
+        editor.commands.setContent(content);
+      }
+      lastSavedContentRef.current = content;
+      setContent(content);
+    }
+  }, [currentChapter?.id]);
+
+  const handleSave = useCallback(async () => {
+    if (!currentChapter) return;
+    
+    const content = editor?.getHTML() || '';
+    if (content === lastSavedContentRef.current) return;
+    
+    setSaving(true);
+    try {
+      await updateChapter(currentChapter.id, { content });
+      lastSavedContentRef.current = content;
+      setLastSavedAt(new Date());
+    } catch (error) {
+      console.error('保存失败:', error);
+    } finally {
+      setSaving(false);
+    }
+  }, [currentChapter, editor, updateChapter, setSaving, setLastSavedAt]);
+
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+      handleSave();
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [handleSave]);
+
+  useEffect(() => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+    saveTimeoutRef.current = setTimeout(handleSave, 30000);
+
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, [editor?.getHTML()]);
+
+  if (!currentChapter) {
+    return (
+      <div className="flex-1 flex items-center justify-center bg-white dark:bg-gray-900">
+        <div className="text-center">
+          <p className="text-gray-500 dark:text-gray-400 mb-2">
+            选择左侧目录中的一个章节开始编辑
+          </p>
+          <p className="text-sm text-gray-400 dark:text-gray-500">
+            或创建一个新卷和新章节
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex-1 flex flex-col bg-white dark:bg-gray-900">
+      <div className="border-b border-gray-200 dark:border-gray-700 p-4">
+        <h2 className="text-lg font-medium text-gray-900 dark:text-white">
+          {currentChapter.title}
+        </h2>
+      </div>
+
+      <div className="flex-1 overflow-y-auto p-8">
+        <div className="max-w-3xl mx-auto">
+          <EditorToolbar editor={editor} />
+          <EditorContent
+            editor={editor}
+            className="prose dark:prose-invert prose-indigo max-w-none outline-none min-h-[500px]"
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function EditorToolbar({ editor }: { editor: ReturnType<typeof useEditor> }) {
+  if (!editor) return null;
+
+  return (
+    <div className="flex gap-2 mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
+      <button
+        onClick={() => editor.chain().focus().toggleBold().run()}
+        className={`p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 ${
+          editor.isActive('bold') ? 'bg-gray-200 dark:bg-gray-700' : ''
+        }`}
+        title="粗体"
+      >
+        <span className="font-bold text-sm">B</span>
+      </button>
+      <button
+        onClick={() => editor.chain().focus().toggleItalic().run()}
+        className={`p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 ${
+          editor.isActive('italic') ? 'bg-gray-200 dark:bg-gray-700' : ''
+        }`}
+        title="斜体"
+      >
+        <span className="italic text-sm">I</span>
+      </button>
+      <button
+        onClick={() => editor.chain().focus().toggleStrike().run()}
+        className={`p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 ${
+          editor.isActive('strike') ? 'bg-gray-200 dark:bg-gray-700' : ''
+        }`}
+        title="删除线"
+      >
+        <span className="line-through text-sm">S</span>
+      </button>
+
+      <div className="w-px bg-gray-300 dark:bg-gray-600 mx-1" />
+
+      <button
+        onClick={() => editor.chain().focus().toggleHeading({ level: 1 }).run()}
+        className={`p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 ${
+          editor.isActive('heading', { level: 1 }) ? 'bg-gray-200 dark:bg-gray-700' : ''
+        }`}
+        title="标题1"
+      >
+        <span className="text-sm font-bold">H1</span>
+      </button>
+      <button
+        onClick={() => editor.chain().focus().toggleHeading({ level: 2 }).run()}
+        className={`p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 ${
+          editor.isActive('heading', { level: 2 }) ? 'bg-gray-200 dark:bg-gray-700' : ''
+        }`}
+        title="标题2"
+      >
+        <span className="text-sm font-bold">H2</span>
+      </button>
+      <button
+        onClick={() => editor.chain().focus().toggleHeading({ level: 3 }).run()}
+        className={`p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 ${
+          editor.isActive('heading', { level: 3 }) ? 'bg-gray-200 dark:bg-gray-700' : ''
+        }`}
+        title="标题3"
+      >
+        <span className="text-sm font-bold">H3</span>
+      </button>
+
+      <div className="w-px bg-gray-300 dark:bg-gray-600 mx-1" />
+
+      <button
+        onClick={() => editor.chain().focus().toggleBlockquote().run()}
+        className={`p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 ${
+          editor.isActive('blockquote') ? 'bg-gray-200 dark:bg-gray-700' : ''
+        }`}
+        title="引用"
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+        </svg>
+      </button>
+      <button
+        onClick={() => editor.chain().focus().setHorizontalRule().run()}
+        className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
+        title="分隔线"
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 12h14" />
+        </svg>
+      </button>
+    </div>
+  );
+}
