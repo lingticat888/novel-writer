@@ -150,10 +150,16 @@ export const useNovelStore = create<NovelState>((set) => ({
   deleteVolume: async (volumeId: string) => {
     try {
       await novelRepository.deleteVolume(volumeId);
-      set((state) => ({
-        volumes: state.volumes.filter((v) => v.id !== volumeId),
-        currentVolume: state.currentVolume?.id === volumeId ? null : state.currentVolume,
-      }));
+      set((state) => {
+        const updatedVolumes = state.volumes.filter((v) => v.id !== volumeId);
+        return {
+          volumes: updatedVolumes,
+          currentVolume: state.currentVolume?.id === volumeId ? null : state.currentVolume,
+          currentNovel: state.currentNovel
+            ? { ...state.currentNovel, volumes: updatedVolumes }
+            : state.currentNovel,
+        };
+      });
     } catch {
       set({ error: '删除卷失败' });
     }
@@ -211,13 +217,19 @@ export const useNovelStore = create<NovelState>((set) => ({
   deleteChapter: async (chapterId: string) => {
     try {
       await novelRepository.deleteChapter(chapterId);
-      set((state) => ({
-        volumes: state.volumes.map((v) => ({
+      set((state) => {
+        const updatedVolumes = state.volumes.map((v) => ({
           ...v,
           chapters: v.chapters?.filter((c) => c.id !== chapterId),
-        })),
-        currentChapter: state.currentChapter?.id === chapterId ? null : state.currentChapter,
-      }));
+        }));
+        return {
+          volumes: updatedVolumes,
+          currentChapter: state.currentChapter?.id === chapterId ? null : state.currentChapter,
+          currentNovel: state.currentNovel
+            ? { ...state.currentNovel, volumes: updatedVolumes }
+            : state.currentNovel,
+        };
+      });
     } catch {
       set({ error: '删除章节失败' });
     }
