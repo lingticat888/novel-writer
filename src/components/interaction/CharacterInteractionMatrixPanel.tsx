@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useCharacterInteractionStore, useNovelStore } from '@/stores';
 import { characterRepository } from '@/services/characterRepository';
 import type { RelationshipType, Character } from '@/models';
@@ -20,15 +20,6 @@ const RELATIONSHIP_COLORS: Record<RelationshipType, string> = {
   enmity: '#ef4444',
   stranger: '#6b7280',
   other: '#9ca3af',
-};
-
-const RELATIONSHIP_BG_COLORS: Record<RelationshipType, string> = {
-  family: 'bg-purple-100 dark:bg-purple-900/30',
-  friendship: 'bg-blue-100 dark:bg-blue-900/30',
-  romance: 'bg-pink-100 dark:bg-pink-900/30',
-  enmity: 'bg-red-100 dark:bg-red-900/30',
-  stranger: 'bg-gray-100 dark:bg-gray-700/50',
-  other: 'bg-gray-50 dark:bg-gray-700/50',
 };
 
 interface GraphNode {
@@ -78,8 +69,6 @@ export function CharacterInteractionMatrixPanel({ novelId, onClose }: CharacterI
   const [newEventType, setNewEventType] = useState('');
   const [newEventDescription, setNewEventDescription] = useState('');
 
-  const graphRef = useRef<{ centerAt: (x: number, y: number, ms: number) => void; zoom: (k: number, ms: number) => void } | null>(null);
-
   useEffect(() => {
     loadInteractions(novelId);
     characterRepository.findByNovelId(novelId).then(setCharacters);
@@ -95,11 +84,6 @@ export function CharacterInteractionMatrixPanel({ novelId, onClose }: CharacterI
     return interactions.filter(
       (i) => i.characterAId === charId || i.characterBId === charId
     );
-  };
-
-  const getRelatedCharacter = (interaction: typeof interactions[0], charId: string) => {
-    const relatedId = interaction.characterAId === charId ? interaction.characterBId : interaction.characterAId;
-    return getCharacterById(relatedId);
   };
 
   const handleCreate = async () => {
@@ -137,7 +121,7 @@ export function CharacterInteractionMatrixPanel({ novelId, onClose }: CharacterI
     v.chapters?.map((c) => ({ ...c, volumeTitle: v.title })) || []
   ) || [];
 
-  const getRelatedCharacterIds = (charId: string): string[] => {
+  const getRelatedCharacterIds = useCallback((charId: string): string[] => {
     const related = new Set<string>();
     related.add(charId);
     interactions.forEach((i) => {
@@ -145,7 +129,7 @@ export function CharacterInteractionMatrixPanel({ novelId, onClose }: CharacterI
       if (i.characterBId === charId) related.add(i.characterAId);
     });
     return Array.from(related);
-  };
+  }, [interactions]);
 
   const relatedIds = selectedCharacterId ? getRelatedCharacterIds(selectedCharacterId) : [];
 
@@ -169,18 +153,19 @@ export function CharacterInteractionMatrixPanel({ novelId, onClose }: CharacterI
       })),
   };
 
-  const handleNodeClick = useCallback((node: GraphNode) => {
-    setSelectedCharacterId(node.id);
+  const handleNodeClick = useCallback((node: object) => {
+    const n = node as GraphNode;
+    setSelectedCharacterId(n.id);
     selectInteraction(null);
   }, [selectInteraction]);
 
-  const handleLinkClick = useCallback((link: GraphLink) => {
-    selectInteraction(link.interactionId);
+  const handleLinkClick = useCallback((link: object) => {
+    const l = link as GraphLink;
+    selectInteraction(l.interactionId);
     setSelectedCharacterId(null);
   }, [selectInteraction]);
 
   const selectedCharacter = selectedCharacterId ? getCharacterById(selectedCharacterId) : null;
-  const relatedInteractions = selectedCharacterId ? getInteractionsForCharacter(selectedCharacterId) : [];
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -335,53 +320,15 @@ export function CharacterInteractionMatrixPanel({ novelId, onClose }: CharacterI
             ) : (
               <>
                 <ForceGraph2D
-                  ref={graphRef}
                   graphData={graphData}
                   nodeLabel="name"
-                  nodeVal={(node: GraphNode) => node.val}
-                  nodeColor={(node: GraphNode) => node.color as string}
-                  linkColor={(link: GraphLink) => link.color}
-                  linkWidth={(link: GraphLink) => selectedInteractionId === link.interactionId ? 4 : 2}
+                  nodeColor={(node) => (node as GraphNode).color}
+                  linkColor={(link) => (link as GraphLink).color}
+                  linkWidth={(link) => selectedInteractionId === (link as GraphLink).interactionId ? 4 : 2}
                   linkDirectionalArrowLength={6}
                   linkDirectionalArrowRelPos={0.8}
-                  onNodeClick={(node: GraphNode) => handleNodeClick(node)}
-                  onLinkClick={(link: object) => handleLinkClick(link as GraphLink)}
-                  nodeCanvasObjectMode={() => 'after'}
-                  nodeCanvasObject={(node: GraphNode, ctx: CanvasRenderingContext2D, globalScale: number) => {
-                    const label = node.name;
-                    const fontSize = 12 / globalScale;
-                    ctx.font = `bold ${fontSize}px sans-serif`;
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'top';
-                    ctx.fillStyle = node.color as string;
-                    ctx.fillText(label, node.x!, node.y! + 8);
-                  }}
-                  linkCanvasObjectMode={() => 'after'}
-                  linkCanvasObject={(link: GraphLink, ctx: CanvasRenderingContext2D, globalScale: number) => {
-                    const label = RELATIONSHIP_LABELS[link.relationshipType];
-                    const fontSize = 10 / globalScale;
-                    
-                    const sourceNode = link.source as { x?: number; y?: number };
-                    const targetNode = link.target as { x?: number; y?: number };
-                    
-                    if (sourceNode.x === undefined || targetNode.x === undefined) return;
-                    
-                    const midX = (sourceNode.x + targetNode.x) / 2;
-                    const midY = (sourceNode.y + targetNode.y) / 2;
-                    
-                    ctx.font = `${fontSize}px sans-serif`;
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-                    const textWidth = ctx.measureText(label).width;
-                    
-                    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-                    ctx.fillRect(midX - textWidth / 2 - 2, midY - fontSize / 2 - 2, textWidth + 4, fontSize + 4);
-                    ctx.strokeStyle = link.color;
-                    ctx.lineWidth = 1;
-                    ctx.strokeRect(midX - textWidth / 2 - 2, midY - fontSize / 2 - 2, textWidth + 4, fontSize + 4);
-                    ctx.fillStyle = link.color;
-                    ctx.fillText(label, midX, midY);
-                  }}
+                  onNodeClick={handleNodeClick}
+                  onLinkClick={handleLinkClick}
                   cooldownTicks={100}
                   d3AlphaDecay={0.02}
                   d3VelocityDecay={0.3}
