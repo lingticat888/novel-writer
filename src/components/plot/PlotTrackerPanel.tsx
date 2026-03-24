@@ -104,7 +104,7 @@ export function PlotTrackerPanel({ novelId, onClose, initialContent = '', buried
   };
 
   const handleResolve = async () => {
-    if (!resolveEditingId || !resolveChapterId || !resolveDescription) return;
+    if (!resolveEditingId || !resolveChapterId) return;
     await resolvePlot(resolveEditingId, resolveChapterId, resolveDescription);
     cancelResolve();
   };
@@ -176,6 +176,7 @@ export function PlotTrackerPanel({ novelId, onClose, initialContent = '', buried
             <div className="space-y-3">
               {filteredPlots.map((plot) => {
                 const buriedChapter = chapters.find(c => c.id === plot.buriedChapterId);
+                const resolveChapter = chapters.find(c => c.id === plot.actualResolveChapterId);
                 return (
                 <div
                   key={plot.id}
@@ -310,9 +311,10 @@ export function PlotTrackerPanel({ novelId, onClose, initialContent = '', buried
                           </button>
                         </div>
                       )}
-                      {plot.status === 'resolved' && plot.resolveDescription && (
+                      {plot.status === 'resolved' && (
                         <p className="mt-2 text-sm text-green-700 dark:text-green-400">
-                          回收于: {plot.resolveDescription}
+                          {resolveChapter && <span>回收于: {resolveChapter.title}</span>}
+                          {plot.resolveDescription && <span> - {plot.resolveDescription}</span>}
                         </p>
                       )}
                     </div>
