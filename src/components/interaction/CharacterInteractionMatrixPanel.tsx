@@ -587,7 +587,13 @@ export function CharacterInteractionMatrixPanel({ novelId, onClose }: CharacterI
             </div>
           ) : (
             <button
-              onClick={() => setIsCreating(true)}
+              onClick={() => {
+                if (characters.length >= 2) {
+                  setSelectedCharacterAId(characters[0].id);
+                  setSelectedCharacterBId(characters[1].id);
+                }
+                setIsCreating(true);
+              }}
               className="w-full py-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-md text-gray-500 hover:border-indigo-500 hover:text-indigo-500"
             >
               + 添加关系
@@ -629,7 +635,7 @@ function CharacterRelationshipGraph({ interactions, characters, getRelationshipL
         id: char.id,
         name: char.name,
         color: selectedCharacterId === char.id ? '#6366f1' : '#3b82f6',
-        val: 6,
+        val: 1,
       })),
     links: interactions
       .filter((i) => !selectedCharacterId || (i.characterAId === selectedCharacterId || i.characterBId === selectedCharacterId))
