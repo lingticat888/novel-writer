@@ -137,20 +137,36 @@ export function CharacterInteractionMatrixPanel({ novelId, onClose }: CharacterI
     v.chapters?.map((c) => ({ ...c, volumeTitle: v.title })) || []
   ) || [];
 
+  const getRelatedCharacterIds = (charId: string): string[] => {
+    const related = new Set<string>();
+    related.add(charId);
+    interactions.forEach((i) => {
+      if (i.characterAId === charId) related.add(i.characterBId);
+      if (i.characterBId === charId) related.add(i.characterAId);
+    });
+    return Array.from(related);
+  };
+
+  const relatedIds = selectedCharacterId ? getRelatedCharacterIds(selectedCharacterId) : [];
+
   const graphData = {
-    nodes: characters.map((char) => ({
-      id: char.id,
-      name: char.name,
-      color: selectedCharacterId === char.id ? '#6366f1' : '#9333ea',
-      val: 1 + getInteractionsForCharacter(char.id).length * 0.5,
-    })),
-    links: interactions.map((i) => ({
-      source: i.characterAId,
-      target: i.characterBId,
-      color: RELATIONSHIP_COLORS[i.relationshipType],
-      relationshipType: i.relationshipType,
-      interactionId: i.id,
-    })),
+    nodes: characters
+      .filter((char) => !selectedCharacterId || relatedIds.includes(char.id))
+      .map((char) => ({
+        id: char.id,
+        name: char.name,
+        color: selectedCharacterId === char.id ? '#6366f1' : '#9333ea',
+        val: 1 + getInteractionsForCharacter(char.id).length * 0.5,
+      })),
+    links: interactions
+      .filter((i) => !selectedCharacterId || (i.characterAId === selectedCharacterId || i.characterBId === selectedCharacterId))
+      .map((i) => ({
+        source: i.characterAId,
+        target: i.characterBId,
+        color: RELATIONSHIP_COLORS[i.relationshipType],
+        relationshipType: i.relationshipType,
+        interactionId: i.id,
+      })),
   };
 
   const handleNodeClick = useCallback((node: GraphNode) => {
