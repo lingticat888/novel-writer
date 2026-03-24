@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { useEmotionalArcStore, useNovelStore } from '@/stores';
 import type { EmotionalType } from '@/models';
@@ -46,11 +46,19 @@ const EMOTION_LABELS: Record<EmotionalType, string> = {
   awkwardness: '尴尬',
 };
 
-function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ payload: { emotion: string; note?: string } }>; label?: string }) {
-  const [isDark, setIsDark] = use(false);
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: Array<{ payload: { emotion: string; note?: string; intensity: number } }>;
+  label?: string;
+}
+
+function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
+  const [isDark, setIsDark] = useState(false);
 
   useEffect(() => {
-    setIsDark(document.documentElement.classList.contains('dark'));
+    if (typeof window !== 'undefined') {
+      setIsDark(document.documentElement.classList.contains('dark'));
+    }
   }, []);
 
   if (!active || !payload || !payload.length) return null;
@@ -65,6 +73,7 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
     >
       <div className="text-sm font-medium mb-1">章节: {label}</div>
       <div className="text-sm">情感点: {data.emotion}</div>
+      <div className="text-sm">强度: {Math.abs(data.intensity)}%</div>
       {data.note && <div className="text-sm text-gray-500">备注: {data.note}</div>}
     </div>
   );
