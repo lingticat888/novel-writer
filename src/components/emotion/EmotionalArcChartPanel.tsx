@@ -146,7 +146,7 @@ export function EmotionalArcChartPanel({ novelId, onClose }: EmotionalArcChartPa
     const sortedPoints = [...selectedArc.points].sort(
       (a, b) => allChapters.findIndex((c) => c.id === a.chapterId) - allChapters.findIndex((c) => c.id === b.chapterId)
     );
-    return sortedPoints.map((point) => {
+    const data = sortedPoints.map((point) => {
       const chapter = allChapters.find((c) => c.id === point.chapterId);
       const isNegative = NEGATIVE_EMOTIONS.includes(point.emotion);
       const emotionLabel = EMOTION_LABELS[point.emotion];
@@ -162,6 +162,8 @@ export function EmotionalArcChartPanel({ novelId, onClose }: EmotionalArcChartPa
         chapterId: point.chapterId,
       };
     });
+    console.log('chartData:', data);
+    return data;
   };
 
   const chartData = getChartData();
