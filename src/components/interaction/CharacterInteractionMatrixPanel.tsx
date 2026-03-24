@@ -694,7 +694,7 @@ function CharacterRelationshipGraph({ interactions, characters, getRelationshipL
             ref={graphRef}
             graphData={graphData}
             nodeLabel={(node: any) => node.name}
-            nodeVal={0.4}
+            nodeVal={0.01}
             nodeColor={(node: any) => node.color}
             linkColor={(link: any) => link.color}
             linkWidth={2}
