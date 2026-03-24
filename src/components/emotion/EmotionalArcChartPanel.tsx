@@ -46,6 +46,30 @@ const EMOTION_LABELS: Record<EmotionalType, string> = {
   awkwardness: '尴尬',
 };
 
+function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ payload: { emotion: string; note?: string } }>; label?: string }) {
+  const [isDark, setIsDark] = use(false);
+
+  useEffect(() => {
+    setIsDark(document.documentElement.classList.contains('dark'));
+  }, []);
+
+  if (!active || !payload || !payload.length) return null;
+
+  const data = payload[0]?.payload;
+  if (!data) return null;
+
+  return (
+    <div
+      className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-3 shadow-lg"
+      style={{ color: isDark ? '#fff' : '#374151' }}
+    >
+      <div className="text-sm font-medium mb-1">章节: {label}</div>
+      <div className="text-sm">情感点: {data.emotion}</div>
+      {data.note && <div className="text-sm text-gray-500">备注: {data.note}</div>}
+    </div>
+  );
+}
+
 interface EmotionalArcChartPanelProps {
   novelId: string;
   onClose: () => void;
@@ -288,12 +312,7 @@ export function EmotionalArcChartPanel({ novelId, onClose }: EmotionalArcChartPa
                       <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                       <XAxis dataKey="name" stroke="#9ca3af" fontSize={12} />
                       <YAxis domain={[-100, 100]} ticks={[-100, -50, 0, 50, 100]} stroke="#9ca3af" fontSize={12} />
-                      <Tooltip 
-                        contentStyle={{ backgroundColor: '#1f2937', border: 'none', borderRadius: '8px' }}
-                        itemStyle={{ color: '#fff' }}
-                        formatter={(value) => [`${Math.abs(Number(value))}%`, '强度']}
-                        labelFormatter={(label) => `章节: ${label}`}
-                      />
+                      <Tooltip content={<CustomTooltip />} />
                       <ReferenceLine y={0} stroke="#6b7280" strokeWidth={2} />
                       <Line
                         type="monotone"
@@ -482,6 +501,9 @@ export function EmotionalArcChartPanel({ novelId, onClose }: EmotionalArcChartPa
                                     <span className="text-gray-500">-</span>
                                     <span className="text-gray-600 dark:text-gray-400">{EMOTION_LABELS[point.emotion]}</span>
                                     <span className="text-gray-400">({point.intensity}%)</span>
+                                    {point.note && (
+                                      <span className="text-gray-400 text-xs italic">- {point.note}</span>
+                                    )}
                                   </div>
                                   <div className="flex gap-2">
                                     <button
