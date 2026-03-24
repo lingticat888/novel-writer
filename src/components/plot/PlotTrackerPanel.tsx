@@ -370,7 +370,7 @@ export function PlotTrackerPanel({ novelId, onClose, initialContent = '', buried
               />
               <select
                 value={buriedChapterId}
-                onChange={(e) => {}}
+                onChange={() => {}}
                 className="w-full px-2 py-1 text-sm border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
               >
                 <option value="">选择埋设章节</option>

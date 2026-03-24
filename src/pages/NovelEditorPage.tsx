@@ -129,7 +129,7 @@ export function NovelEditorPage() {
         
         <div className="flex-1" />
         
-        <button onClick={openPlotTrackerPanel} className="px-3 py-1.5 text-sm bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-md hover:bg-amber-200 dark:hover:bg-amber-900/50">
+        <button onClick={() => openPlotTrackerPanel()} className="px-3 py-1.5 text-sm bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-400 rounded-md hover:bg-amber-200 dark:hover:bg-amber-900/50">
           🎭 伏笔
         </button>
         

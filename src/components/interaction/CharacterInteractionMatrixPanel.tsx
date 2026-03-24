@@ -22,25 +22,18 @@ const RELATIONSHIP_COLORS: Record<RelationshipType, string> = {
   other: '#9ca3af',
 };
 
-const RELATIONSHIP_BG_COLORS: Record<RelationshipType, string> = {
-  family: 'bg-purple-100 dark:bg-purple-900/30',
-  friendship: 'bg-blue-100 dark:bg-blue-900/30',
-  romance: 'bg-pink-100 dark:bg-pink-900/30',
-  enmity: 'bg-red-100 dark:bg-red-900/30',
-  stranger: 'bg-gray-100 dark:bg-gray-700/50',
-  other: 'bg-gray-50 dark:bg-gray-700/50',
-};
-
 interface GraphNode {
   id: string;
   name: string;
   color: string;
   val: number;
+  x?: number;
+  y?: number;
 }
 
 interface GraphLink {
-  source: string;
-  target: string;
+  source: string | GraphNode;
+  target: string | GraphNode;
   color: string;
   relationshipType: RelationshipType;
   interactionId: string;
@@ -78,7 +71,7 @@ export function CharacterInteractionMatrixPanel({ novelId, onClose }: CharacterI
   const [newEventType, setNewEventType] = useState('');
   const [newEventDescription, setNewEventDescription] = useState('');
 
-  const graphRef = useRef<{ centerAt: (x: number, y: number, ms: number) => void; zoom: (k: number, ms: number) => void } | null>(null);
+  const graphRef = useRef<{ centerAt: (x: number, y: number, ms: number) => void; zoom: (k: number, ms: number) => void } | undefined>(undefined);
 
   useEffect(() => {
     loadInteractions(novelId);
@@ -95,11 +88,6 @@ export function CharacterInteractionMatrixPanel({ novelId, onClose }: CharacterI
     return interactions.filter(
       (i) => i.characterAId === charId || i.characterBId === charId
     );
-  };
-
-  const getRelatedCharacter = (interaction: typeof interactions[0], charId: string) => {
-    const relatedId = interaction.characterAId === charId ? interaction.characterBId : interaction.characterAId;
-    return getCharacterById(relatedId);
   };
 
   const handleCreate = async () => {
@@ -178,9 +166,6 @@ export function CharacterInteractionMatrixPanel({ novelId, onClose }: CharacterI
     selectInteraction(link.interactionId);
     setSelectedCharacterId(null);
   }, [selectInteraction]);
-
-  const selectedCharacter = selectedCharacterId ? getCharacterById(selectedCharacterId) : null;
-  const relatedInteractions = selectedCharacterId ? getInteractionsForCharacter(selectedCharacterId) : [];
 
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
@@ -335,36 +320,36 @@ export function CharacterInteractionMatrixPanel({ novelId, onClose }: CharacterI
             ) : (
               <>
                 <ForceGraph2D
-                  ref={graphRef}
+                  ref={graphRef as any}
                   graphData={graphData}
                   nodeLabel="name"
                   nodeVal={(node: GraphNode) => node.val}
                   nodeColor={(node: GraphNode) => node.color as string}
-                  linkColor={(link: GraphLink) => link.color}
-                  linkWidth={(link: GraphLink) => selectedInteractionId === link.interactionId ? 4 : 2}
+                  linkColor={(link: any) => link.color}
+                  linkWidth={(link: any) => selectedInteractionId === link.interactionId ? 4 : 2}
                   linkDirectionalArrowLength={6}
                   linkDirectionalArrowRelPos={0.8}
                   onNodeClick={(node: GraphNode) => handleNodeClick(node)}
-                  onLinkClick={(link: object) => handleLinkClick(link as GraphLink)}
+                  onLinkClick={(link: any) => handleLinkClick(link)}
                   nodeCanvasObjectMode={() => 'after'}
-                  nodeCanvasObject={(node: GraphNode, ctx: CanvasRenderingContext2D, globalScale: number) => {
+                  nodeCanvasObject={(node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
                     const label = node.name;
                     const fontSize = 12 / globalScale;
                     ctx.font = `bold ${fontSize}px sans-serif`;
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'top';
                     ctx.fillStyle = node.color as string;
-                    ctx.fillText(label, node.x!, node.y! + 8);
+                    ctx.fillText(label, node.x || 0, (node.y || 0) + 8);
                   }}
                   linkCanvasObjectMode={() => 'after'}
-                  linkCanvasObject={(link: GraphLink, ctx: CanvasRenderingContext2D, globalScale: number) => {
-                    const label = RELATIONSHIP_LABELS[link.relationshipType];
+                  linkCanvasObject={(link: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
+                    const label = RELATIONSHIP_LABELS[link.relationshipType as RelationshipType];
                     const fontSize = 10 / globalScale;
                     
                     const sourceNode = link.source as { x?: number; y?: number };
                     const targetNode = link.target as { x?: number; y?: number };
                     
-                    if (sourceNode.x === undefined || targetNode.x === undefined) return;
+                    if (sourceNode.x === undefined || targetNode.x === undefined || sourceNode.y === undefined || targetNode.y === undefined) return;
                     
                     const midX = (sourceNode.x + targetNode.x) / 2;
                     const midY = (sourceNode.y + targetNode.y) / 2;
