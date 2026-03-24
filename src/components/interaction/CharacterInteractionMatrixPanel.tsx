@@ -693,67 +693,47 @@ function CharacterRelationshipGraph({ interactions, characters, getRelationshipL
           <ForceGraph2D
             ref={graphRef}
             graphData={graphData}
-          nodeLabel={() => ''}
-          nodeVal={(node: any) => node.val}
-          nodeColor={(node: any) => node.color}
-          linkColor={(link: any) => link.color}
-          linkWidth={2}
-          linkDirectionalArrowLength={0}
-          linkDirectionalArrowRelPos={1}
-          linkCurvature={0.15}
-          onNodeClick={(node: any) => {
-            setSelectedCharacterId(selectedCharacterId === node.id ? null : node.id);
-          }}
-          onLinkClick={(link: any) => {
-            onSelectInteraction(link.interactionId);
-          }}
-          nodeCanvasObjectMode={() => 'after'}
-          nodeCanvasObject={(node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
-            const nodeSize = 3;
-            const label = node.name || '';
-            const fontSize = 10 / globalScale;
-
-            ctx.save();
-            ctx.beginPath();
-            ctx.arc(node.x || 0, node.y || 0, nodeSize, 0, 2 * Math.PI);
-            ctx.fillStyle = node.color;
-            ctx.fill();
-            ctx.restore();
-
-            ctx.font = `500 ${fontSize}px sans-serif`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'top';
-            ctx.fillStyle = '#374151';
-            ctx.fillText(label, node.x || 0, (node.y || 0) + nodeSize + 2);
-          }}
-          linkCanvasObjectMode={() => 'after'}
-          linkCanvasObject={(link: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
-            const sourceNode = link.source as { x?: number; y?: number };
-            const targetNode = link.target as { x?: number; y?: number };
-            
-            if (sourceNode.x === undefined || targetNode.x === undefined || sourceNode.y === undefined || targetNode.y === undefined) return;
-            
-            const relLabel = getRelationshipLabel(link.relationshipType);
-            const fontSize = 10 / globalScale;
-            
-            const midX = (sourceNode.x + targetNode.x) / 2;
-            const midY = (sourceNode.y + targetNode.y) / 2;
-            
-            ctx.font = `${fontSize}px sans-serif`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            const textWidth = ctx.measureText(relLabel).width;
-            const textHeight = fontSize;
-            
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-            ctx.fillRect(midX - textWidth / 2 - 3, midY - textHeight / 2 - 1, textWidth + 6, textHeight + 2);
-            ctx.fillStyle = link.color;
-            ctx.fillText(relLabel, midX, midY);
-          }}
-          cooldownTicks={100}
-          d3AlphaDecay={0.02}
-          d3VelocityDecay={0.3}
-        />
+            nodeLabel={(node: any) => node.name}
+            nodeVal={1}
+            nodeColor={(node: any) => node.color}
+            linkColor={(link: any) => link.color}
+            linkWidth={2}
+            linkDirectionalArrowLength={0}
+            linkCurvature={0.15}
+            onNodeClick={(node: any) => {
+              setSelectedCharacterId(selectedCharacterId === node.id ? null : node.id);
+            }}
+            onLinkClick={(link: any) => {
+              onSelectInteraction(link.interactionId);
+            }}
+            linkCanvasObjectMode={() => 'after'}
+            linkCanvasObject={(link: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
+              const sourceNode = link.source as { x?: number; y?: number };
+              const targetNode = link.target as { x?: number; y?: number };
+              
+              if (sourceNode.x === undefined || targetNode.x === undefined || sourceNode.y === undefined || targetNode.y === undefined) return;
+              
+              const relLabel = getRelationshipLabel(link.relationshipType);
+              const fontSize = 10 / globalScale;
+              
+              const midX = (sourceNode.x + targetNode.x) / 2;
+              const midY = (sourceNode.y + targetNode.y) / 2;
+              
+              ctx.font = `${fontSize}px sans-serif`;
+              ctx.textAlign = 'center';
+              ctx.textBaseline = 'middle';
+              const textWidth = ctx.measureText(relLabel).width;
+              const textHeight = fontSize;
+              
+              ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+              ctx.fillRect(midX - textWidth / 2 - 3, midY - textHeight / 2 - 1, textWidth + 6, textHeight + 2);
+              ctx.fillStyle = link.color;
+              ctx.fillText(relLabel, midX, midY);
+            }}
+            cooldownTicks={100}
+            d3AlphaDecay={0.02}
+            d3VelocityDecay={0.3}
+          />
       </div>
 
       <div className="absolute top-3 right-3 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg shadow-sm px-3 py-2">
