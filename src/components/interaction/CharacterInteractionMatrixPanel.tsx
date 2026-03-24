@@ -709,23 +709,21 @@ function CharacterRelationshipGraph({ interactions, characters, getRelationshipL
           }}
           nodeCanvasObjectMode={() => 'after'}
           nodeCanvasObject={(node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
-            const nodeSize = 4;
+            const nodeSize = 3;
             const label = node.name || '';
-            const fontSize = 12 / globalScale;
+            const fontSize = 10 / globalScale;
 
             ctx.save();
             ctx.beginPath();
             ctx.arc(node.x || 0, node.y || 0, nodeSize, 0, 2 * Math.PI);
             ctx.fillStyle = node.color;
-            ctx.shadowColor = node.color;
-            ctx.shadowBlur = 4;
             ctx.fill();
             ctx.restore();
 
-            ctx.font = `600 ${fontSize}px sans-serif`;
+            ctx.font = `500 ${fontSize}px sans-serif`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'top';
-            ctx.fillStyle = '#1f2937';
+            ctx.fillStyle = '#374151';
             ctx.fillText(label, node.x || 0, (node.y || 0) + nodeSize + 2);
           }}
           linkCanvasObjectMode={() => 'after'}
