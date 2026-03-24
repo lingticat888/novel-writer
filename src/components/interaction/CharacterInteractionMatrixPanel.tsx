@@ -14,10 +14,10 @@ const RELATIONSHIP_LABELS: Record<RelationshipType, string> = {
 };
 
 const RELATIONSHIP_COLORS: Record<RelationshipType, string> = {
-  family: '#9333ea',
+  family: '#8b5cf6',
   friendship: '#3b82f6',
   romance: '#ec4899',
-  enmity: '#ef4444',
+  enmity: '#f97316',
   stranger: '#6b7280',
   other: '#9ca3af',
 };
@@ -516,8 +516,8 @@ function CharacterRelationshipGraph({ interactions, characters, onSelectInteract
       .map((char) => ({
         id: char.id,
         name: char.name,
-        color: selectedCharacterId === char.id ? '#6366f1' : '#9333ea',
-        val: 1 + getInteractionsForCharacter(char.id).length * 0.5,
+        color: selectedCharacterId === char.id ? '#6366f1' : '#3b82f6',
+        val: 8 + getInteractionsForCharacter(char.id).length * 2,
       })),
     links: interactions
       .filter((i) => !selectedCharacterId || (i.characterAId === selectedCharacterId || i.characterBId === selectedCharacterId))
@@ -534,10 +534,12 @@ function CharacterRelationshipGraph({ interactions, characters, onSelectInteract
     return (
       <div className="h-full flex items-center justify-center text-gray-500">
         <div className="text-center">
-          <svg className="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-          </svg>
-          <p>暂无角色数据</p>
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+            <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+            </svg>
+          </div>
+          <p className="text-sm">暂无角色</p>
         </div>
       </div>
     );
@@ -547,10 +549,12 @@ function CharacterRelationshipGraph({ interactions, characters, onSelectInteract
     return (
       <div className="h-full flex items-center justify-center text-gray-500">
         <div className="text-center">
-          <svg className="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
-          </svg>
-          <p>暂无关系</p>
+          <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+            <svg className="w-8 h-8 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+            </svg>
+          </div>
+          <p className="text-sm">暂无关系</p>
         </div>
       </div>
     );
@@ -558,16 +562,17 @@ function CharacterRelationshipGraph({ interactions, characters, onSelectInteract
 
   return (
     <div className="relative h-full min-h-[400px]">
-      <div className="w-full h-full bg-gray-50 dark:bg-gray-900 rounded-lg overflow-hidden">
+      <div className="w-full h-full bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 rounded-lg overflow-hidden">
         <ForceGraph2D
           graphData={graphData}
-          nodeLabel="name"
+          nodeLabel={() => ''}
           nodeVal={(node: any) => node.val}
           nodeColor={(node: any) => node.color}
           linkColor={(link: any) => link.color}
           linkWidth={2}
-          linkDirectionalArrowLength={6}
-          linkDirectionalArrowRelPos={0.8}
+          linkDirectionalArrowLength={0}
+          linkDirectionalArrowRelPos={1}
+          linkCurvature={0.2}
           onNodeClick={(node: any) => {
             setSelectedCharacterId(selectedCharacterId === node.id ? null : node.id);
           }}
@@ -578,62 +583,53 @@ function CharacterRelationshipGraph({ interactions, characters, onSelectInteract
           nodeCanvasObject={(node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
             const label = node.name;
             const fontSize = 12 / globalScale;
-            ctx.font = `bold ${fontSize}px sans-serif`;
+            const nodeSize = node.val || 8;
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(node.x || 0, node.y || 0, nodeSize, 0, 2 * Math.PI);
+            const gradient = ctx.createRadialGradient(
+              node.x || 0, node.y || 0, 0,
+              node.x || 0, node.y || 0, nodeSize
+            );
+            gradient.addColorStop(0, node.color);
+            gradient.addColorStop(1, adjustColor(node.color, -30));
+            ctx.fillStyle = gradient;
+            ctx.shadowColor = node.color;
+            ctx.shadowBlur = 10;
+            ctx.fill();
+            ctx.restore();
+
+            ctx.font = `600 ${fontSize}px sans-serif`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'top';
-            ctx.fillStyle = node.color;
-            ctx.fillText(label, node.x || 0, (node.y || 0) + 8);
-          }}
-          linkCanvasObjectMode={() => 'after'}
-          linkCanvasObject={(link: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
-            const label = RELATIONSHIP_LABELS[link.relationshipType as RelationshipType];
-            const fontSize = 10 / globalScale;
-            
-            const sourceNode = link.source as { x?: number; y?: number };
-            const targetNode = link.target as { x?: number; y?: number };
-            
-            if (sourceNode.x === undefined || targetNode.x === undefined || sourceNode.y === undefined || targetNode.y === undefined) return;
-            
-            const midX = (sourceNode.x + targetNode.x) / 2;
-            const midY = (sourceNode.y + targetNode.y) / 2;
-            
-            ctx.font = `${fontSize}px sans-serif`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'middle';
-            const textWidth = ctx.measureText(label).width;
-            
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-            ctx.fillRect(midX - textWidth / 2 - 2, midY - fontSize / 2 - 2, textWidth + 4, fontSize + 4);
-            ctx.strokeStyle = link.color;
-            ctx.lineWidth = 1;
-            ctx.strokeRect(midX - textWidth / 2 - 2, midY - fontSize / 2 - 2, textWidth + 4, fontSize + 4);
-            ctx.fillStyle = link.color;
-            ctx.fillText(label, midX, midY);
+            ctx.fillStyle = '#1f2937';
+            ctx.fillText(label, node.x || 0, (node.y || 0) + nodeSize + 4);
           }}
           cooldownTicks={100}
           d3AlphaDecay={0.02}
           d3VelocityDecay={0.3}
         />
       </div>
-      <div className="absolute top-4 left-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-3">
-        <div className="text-xs text-gray-500 mb-2">关系类型</div>
-        <div className="space-y-1">
+
+      <div className="absolute top-3 right-3 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg shadow-sm px-3 py-2">
+        <div className="flex gap-3 text-xs">
           {(Object.keys(RELATIONSHIP_LABELS) as RelationshipType[]).map((type) => (
-            <div key={type} className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: RELATIONSHIP_COLORS[type] }} />
-              <span className="text-xs text-gray-600 dark:text-gray-400">{RELATIONSHIP_LABELS[type]}</span>
+            <div key={type} className="flex items-center gap-1.5">
+              <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: RELATIONSHIP_COLORS[type] }} />
+              <span className="text-gray-600 dark:text-gray-400">{RELATIONSHIP_LABELS[type]}</span>
             </div>
           ))}
         </div>
       </div>
-      <div className="absolute bottom-4 right-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-3">
-        <div className="text-xs text-gray-500 mb-2">操作提示</div>
-        <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
-          <div>点击节点筛选关系</div>
-          <div>点击连线查看详情</div>
-          <div>拖拽节点调整布局</div>
-        </div>
-      </div>
     </div>
   );
+}
+
+function adjustColor(hex: string, amount: number): string {
+  const num = parseInt(hex.replace('#', ''), 16);
+  const r = Math.min(255, Math.max(0, (num >> 16) + amount));
+  const g = Math.min(255, Math.max(0, ((num >> 8) & 0x00FF) + amount));
+  const b = Math.min(255, Math.max(0, (num & 0x0000FF) + amount));
+  return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
 }
