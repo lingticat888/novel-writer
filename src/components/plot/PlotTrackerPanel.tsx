@@ -27,6 +27,7 @@ export function PlotTrackerPanel({ novelId, onClose, initialContent = '', buried
     updatePlot,
     resolvePlot,
     invalidatePlot,
+    restorePlot,
     deletePlot,
     setFilterStatus,
   } = usePlotStore();
@@ -34,9 +35,10 @@ export function PlotTrackerPanel({ novelId, onClose, initialContent = '', buried
 
   const [isCreating, setIsCreating] = useState(false);
   const [newContent, setNewContent] = useState('');
-  const [editingPlotId, setEditingPlotId] = useState<string | null>(null);
+  const [editContentId, setEditContentId] = useState<string | null>(null);
   const [editingContent, setEditingContent] = useState('');
   const [editingBuriedChapterId, setEditingBuriedChapterId] = useState('');
+  const [resolveEditingId, setResolveEditingId] = useState<string | null>(null);
   const [resolveChapterId, setResolveChapterId] = useState('');
   const [resolveDescription, setResolveDescription] = useState('');
   const [reuseContent, setReuseContent] = useState<string>('');
@@ -68,29 +70,43 @@ export function PlotTrackerPanel({ novelId, onClose, initialContent = '', buried
     clearPlotPanelInitialContent();
   };
 
-  const startEditing = (plot: { id: string; content: string; buriedChapterId: string }) => {
-    setEditingPlotId(plot.id);
+  const startEditContent = (plot: { id: string; content: string; buriedChapterId: string }) => {
+    setEditContentId(plot.id);
     setEditingContent(plot.content);
     setEditingBuriedChapterId(plot.buriedChapterId);
+  };
+
+  const startResolve = (plotId: string) => {
+    setResolveEditingId(plotId);
     setResolveChapterId('');
     setResolveDescription('');
   };
 
-  const cancelEditing = () => {
-    setEditingPlotId(null);
+  const cancelEdit = () => {
+    setEditContentId(null);
     setEditingContent('');
     setEditingBuriedChapterId('');
+  };
+
+  const cancelResolve = () => {
+    setResolveEditingId(null);
     setResolveChapterId('');
     setResolveDescription('');
   };
 
-  const handleUpdate = async (plotId: string) => {
-    if (!editingContent.trim()) return;
-    await updatePlot(plotId, {
+  const handleUpdateContent = async () => {
+    if (!editContentId || !editingContent.trim()) return;
+    await updatePlot(editContentId, {
       content: editingContent.trim(),
       buriedChapterId: editingBuriedChapterId,
     });
-    cancelEditing();
+    cancelEdit();
+  };
+
+  const handleResolve = async () => {
+    if (!resolveEditingId || !resolveChapterId || !resolveDescription) return;
+    await resolvePlot(resolveEditingId, resolveChapterId, resolveDescription);
+    cancelResolve();
   };
 
   const handleReuse = async () => {
@@ -101,14 +117,6 @@ export function PlotTrackerPanel({ novelId, onClose, initialContent = '', buried
       buriedChapterId: '',
     });
     setReuseContent('');
-  };
-
-  const handleResolve = async (plotId: string) => {
-    if (!resolveChapterId || !resolveDescription) return;
-    await resolvePlot(plotId, resolveChapterId, resolveDescription);
-    setResolveChapterId('');
-    setResolveDescription('');
-    setEditingPlotId(null);
   };
 
   const filteredPlots = filterStatus === 'all'
@@ -197,7 +205,7 @@ export function PlotTrackerPanel({ novelId, onClose, initialContent = '', buried
                           </span>
                         )}
                       </div>
-                      {editingPlotId === plot.id ? (
+                      {editContentId === plot.id ? (
                         <div className="space-y-2 mt-2">
                           <textarea
                             value={editingContent}
@@ -218,13 +226,47 @@ export function PlotTrackerPanel({ novelId, onClose, initialContent = '', buried
                           </select>
                           <div className="flex gap-2">
                             <button
-                              onClick={() => handleUpdate(plot.id)}
+                              onClick={handleUpdateContent}
                               className="px-3 py-1 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700"
                             >
                               保存
                             </button>
                             <button
-                              onClick={cancelEditing}
+                              onClick={cancelEdit}
+                              className="px-3 py-1 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                            >
+                              取消
+                            </button>
+                          </div>
+                        </div>
+                      ) : resolveEditingId === plot.id ? (
+                        <div className="space-y-2 mt-2">
+                          <select
+                            value={resolveChapterId}
+                            onChange={(e) => setResolveChapterId(e.target.value)}
+                            className="w-full px-2 py-1 text-sm border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                          >
+                            <option value="">选择回收章节</option>
+                            {chapters.map(ch => (
+                              <option key={ch.id} value={ch.id}>{ch.title}</option>
+                            ))}
+                          </select>
+                          <input
+                            type="text"
+                            value={resolveDescription}
+                            onChange={(e) => setResolveDescription(e.target.value)}
+                            placeholder="回收描述"
+                            className="w-full px-2 py-1 text-sm border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                          />
+                          <div className="flex gap-2">
+                            <button
+                              onClick={handleResolve}
+                              className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700"
+                            >
+                              保存
+                            </button>
+                            <button
+                              onClick={cancelResolve}
                               className="px-3 py-1 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
                             >
                               取消
@@ -236,43 +278,18 @@ export function PlotTrackerPanel({ novelId, onClose, initialContent = '', buried
                           <p className="text-gray-900 dark:text-white">{plot.content}</p>
                           {plot.status === 'buried' && (
                             <div className="mt-3 flex gap-2 flex-wrap">
-                              {editingPlotId === plot.id ? (
-                                <>
-                                  <input
-                                    type="text"
-                                    value={resolveChapterId}
-                                    onChange={(e) => setResolveChapterId(e.target.value)}
-                                    placeholder="回收章节ID"
-                                    className="flex-1 px-2 py-1 text-sm border rounded dark:bg-gray-700 dark:border-gray-600"
-                                  />
-                                  <input
-                                    type="text"
-                                    value={resolveDescription}
-                                    onChange={(e) => setResolveDescription(e.target.value)}
-                                    placeholder="回收描述"
-                                    className="flex-1 px-2 py-1 text-sm border rounded dark:bg-gray-700 dark:border-gray-600"
-                                  />
-                                  <button
-                                    onClick={() => handleResolve(plot.id)}
-                                    className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700"
-                                  >
-                                    保存
-                                  </button>
-                                  <button
-                                    onClick={cancelEditing}
-                                    className="px-3 py-1 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
-                                  >
-                                    取消
-                                  </button>
-                                </>
-                              ) : (
-                                <button
-                                  onClick={() => startEditing({ id: plot.id, content: plot.content, buriedChapterId: plot.buriedChapterId })}
-                                  className="px-3 py-1 text-sm bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded hover:bg-blue-200 dark:hover:bg-blue-900/50"
-                                >
-                                  编辑
-                                </button>
-                              )}
+                              <button
+                                onClick={() => startEditContent({ id: plot.id, content: plot.content, buriedChapterId: plot.buriedChapterId })}
+                                className="px-3 py-1 text-sm bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded hover:bg-blue-200 dark:hover:bg-blue-900/50"
+                              >
+                                编辑
+                              </button>
+                              <button
+                                onClick={() => startResolve(plot.id)}
+                                className="px-3 py-1 text-sm bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded hover:bg-green-200 dark:hover:bg-green-900/50"
+                              >
+                                标记回收
+                              </button>
                             </div>
                           )}
                         </>
@@ -280,7 +297,7 @@ export function PlotTrackerPanel({ novelId, onClose, initialContent = '', buried
                       {plot.status === 'resolved' && (
                         <div className="mt-3 flex gap-2 flex-wrap">
                           <button
-                            onClick={() => startEditing({ id: plot.id, content: plot.content, buriedChapterId: plot.buriedChapterId })}
+                            onClick={() => startEditContent({ id: plot.id, content: plot.content, buriedChapterId: plot.buriedChapterId })}
                             className="px-3 py-1 text-sm bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded hover:bg-blue-200 dark:hover:bg-blue-900/50"
                           >
                             编辑
@@ -299,13 +316,29 @@ export function PlotTrackerPanel({ novelId, onClose, initialContent = '', buried
                         </p>
                       )}
                     </div>
-                    <div className="flex gap-2 ml-4">
+                    <div className="flex gap-2 ml-4 flex-wrap">
                       {plot.status === 'buried' && (
                         <button
                           onClick={() => invalidatePlot(plot.id)}
                           className="text-gray-500 hover:text-gray-700 dark:hover:text-gray-300 text-sm"
                         >
                           标记失效
+                        </button>
+                      )}
+                      {plot.status === 'invalidated' && (
+                        <button
+                          onClick={() => restorePlot(plot.id)}
+                          className="text-blue-500 hover:text-blue-700 dark:hover:text-blue-300 text-sm"
+                        >
+                          恢复
+                        </button>
+                      )}
+                      {plot.status !== 'buried' && (
+                        <button
+                          onClick={() => setReuseContent(plot.content)}
+                          className="px-3 py-1 text-sm bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 rounded hover:bg-purple-200 dark:hover:bg-purple-900/50"
+                        >
+                          复用
                         </button>
                       )}
                       <button

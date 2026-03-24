@@ -13,6 +13,7 @@ interface PlotState {
   updatePlot: (id: string, data: { content?: string; buriedChapterId?: string }) => Promise<void>;
   resolvePlot: (id: string, chapterId: string, description: string) => Promise<void>;
   invalidatePlot: (id: string) => Promise<void>;
+  restorePlot: (id: string) => Promise<void>;
   deletePlot: (id: string) => Promise<void>;
   setFilterStatus: (status: PlotStatus | 'all') => void;
   clearError: () => void;
@@ -93,6 +94,22 @@ export const usePlotStore = create<PlotState>((set) => ({
       }));
     } catch (err) {
       set({ error: '标记伏笔失效失败' });
+    }
+  },
+
+  restorePlot: async (id: string) => {
+    set({ error: null });
+    try {
+      await unresolvedPlotRepository.update(id, { status: 'buried' });
+      set((state) => ({
+        plots: state.plots.map((p) =>
+          p.id === id
+            ? { ...p, status: 'buried' as PlotStatus, updatedAt: new Date() }
+            : p
+        ),
+      }));
+    } catch (err) {
+      set({ error: '恢复伏笔失败' });
     }
   },
 
