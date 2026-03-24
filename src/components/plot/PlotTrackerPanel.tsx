@@ -156,7 +156,7 @@ export function PlotTrackerPanel({ novelId, onClose, initialContent = '', buried
             <button
               key={status}
               onClick={() => setFilterStatus(status)}
-              className={`px-3 py-1.5 rounded-full text-sm whitespace-nowrap ${
+              className={`px-3 py-1.5 rounded-full text-sm whitespace-nowrap inline-flex items-center justify-center ${
                 filterStatus === status
                   ? 'bg-indigo-600 text-white'
                   : 'bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300'
