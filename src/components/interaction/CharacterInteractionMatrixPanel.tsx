@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useCharacterInteractionStore, useNovelStore, useCharacterStore } from '@/stores';
+import { useCharacterInteractionStore, useNovelStore } from '@/stores';
 import type { RelationshipType, Character } from '@/models';
 
 const RELATIONSHIP_LABELS: Record<RelationshipType, string> = {
@@ -47,8 +47,7 @@ export function CharacterInteractionMatrixPanel({ novelId, onClose }: CharacterI
     selectInteraction,
   } = useCharacterInteractionStore();
 
-  const { currentChapter } = useNovelStore();
-  const { characters, loadCharacters } = useCharacterStore();
+  const { currentNovel, currentChapter } = useNovelStore();
 
   const [isCreating, setIsCreating] = useState(false);
   const [selectedCharacterAId, setSelectedCharacterAId] = useState('');
@@ -60,10 +59,11 @@ export function CharacterInteractionMatrixPanel({ novelId, onClose }: CharacterI
   const [newEventType, setNewEventType] = useState('');
   const [newEventDescription, setNewEventDescription] = useState('');
 
+  const characters = currentNovel?.characters || [];
+
   useEffect(() => {
     loadInteractions(novelId);
-    loadCharacters(novelId);
-  }, [novelId, loadInteractions, loadCharacters]);
+  }, [novelId, loadInteractions]);
 
   const selectedInteraction = interactions.find((i) => i.id === selectedInteractionId);
 
