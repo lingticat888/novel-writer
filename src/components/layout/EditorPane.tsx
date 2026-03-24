@@ -49,7 +49,7 @@ export function EditorPane({ onSetPlot }: { onSetPlot?: (selectedText: string) =
 
   const handleSetPlot = () => {
     const text = getSelectedText();
-    if (text && onSetPlot) {
+    if (text && typeof text === 'string' && onSetPlot) {
       onSetPlot(text);
     }
   };

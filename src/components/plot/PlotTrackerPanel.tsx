@@ -46,9 +46,10 @@ export function PlotTrackerPanel({ novelId, onClose, initialContent = '', buried
 
   // This effect is intentional - it pre-fills the plot content when user selects text from editor
   useEffect(() => {
-    if (initialContent && !isCreating) {
+    const content = typeof initialContent === 'string' ? initialContent : '';
+    if (content && !isCreating) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
-      setNewContent(initialContent);
+      setNewContent(content);
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsCreating(true);
     }
