@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { usePlotStore } from '@/stores';
+import { usePlotStore, useUIStore } from '@/stores';
 import type { PlotStatus } from '@/models';
 
 const STATUS_LABELS: Record<PlotStatus, string> = {
@@ -28,6 +28,7 @@ export function PlotTrackerPanel({ novelId, onClose, initialContent = '', buried
     deletePlot,
     setFilterStatus,
   } = usePlotStore();
+  const { clearPlotPanelInitialContent } = useUIStore();
 
   const [isCreating, setIsCreating] = useState(false);
   const [newContent, setNewContent] = useState(initialContent);
@@ -58,6 +59,7 @@ export function PlotTrackerPanel({ novelId, onClose, initialContent = '', buried
     });
     setNewContent('');
     setIsCreating(false);
+    clearPlotPanelInitialContent();
   };
 
   const handleResolve = async (plotId: string) => {

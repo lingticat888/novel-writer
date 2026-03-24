@@ -33,6 +33,7 @@ interface UIState {
   plotPanelInitialContent: string;
   openPlotTrackerPanel: (initialContent?: string) => void;
   closePlotTrackerPanel: () => void;
+  clearPlotPanelInitialContent: () => void;
 
   isChapterSummaryPanelOpen: boolean;
   openChapterSummaryPanel: () => void;
@@ -135,6 +136,10 @@ export const useUIStore = create<UIState>((set) => ({
 
   closePlotTrackerPanel: () => {
     set({ isPlotTrackerPanelOpen: false, plotPanelInitialContent: '' });
+  },
+
+  clearPlotPanelInitialContent: () => {
+    set({ plotPanelInitialContent: '' });
   },
 
   isChapterSummaryPanelOpen: false,
