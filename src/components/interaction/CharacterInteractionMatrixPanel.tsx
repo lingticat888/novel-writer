@@ -49,12 +49,14 @@ interface CharacterInteractionMatrixPanelProps {
 export function CharacterInteractionMatrixPanel({ novelId, onClose }: CharacterInteractionMatrixPanelProps) {
   const {
     interactions,
+    error,
     loadInteractions,
     createInteraction,
     updateRelationshipType,
     addEvent,
     deleteEvent,
     deleteInteraction,
+    clearError,
   } = useCharacterInteractionStore();
 
   const { currentNovel } = useNovelStore();
@@ -120,6 +122,7 @@ export function CharacterInteractionMatrixPanel({ novelId, onClose }: CharacterI
   const handleCreate = async () => {
     if (!selectedCharacterAId || !selectedCharacterBId || selectedCharacterAId === selectedCharacterBId) return;
     
+    clearError();
     const result = await createInteraction({
       novelId,
       characterAId: selectedCharacterAId,
@@ -562,6 +565,7 @@ export function CharacterInteractionMatrixPanel({ novelId, onClose }: CharacterI
                     setNewCustomLabel('');
                     setSelectedCharacterAId('');
                     setSelectedCharacterBId('');
+                    clearError();
                   }}
                   className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
                 >
@@ -575,6 +579,11 @@ export function CharacterInteractionMatrixPanel({ novelId, onClose }: CharacterI
                   创建
                 </button>
               </div>
+              {error && (
+                <div className="text-sm text-red-600 dark:text-red-400 mt-2">
+                  {error}
+                </div>
+              )}
             </div>
           ) : (
             <button
@@ -683,55 +692,43 @@ function CharacterRelationshipGraph({ interactions, characters, getRelationshipL
             onSelectInteraction(link.interactionId);
           }}
           nodeCanvasObjectMode={() => 'after'}
-          nodeCanvasObject={(node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
-            const label = node.name;
-            const fontSize = 11 / globalScale;
-            const nodeSize = node.val || 6;
+          nodeCanvasObject={(node: any, ctx: CanvasRenderingContext2D) => {
+            const nodeSize = 3;
 
             ctx.save();
             ctx.beginPath();
             ctx.arc(node.x || 0, node.y || 0, nodeSize, 0, 2 * Math.PI);
-            const gradient = ctx.createRadialGradient(
-              node.x || 0, node.y || 0, 0,
-              node.x || 0, node.y || 0, nodeSize
-            );
-            gradient.addColorStop(0, node.color);
-            gradient.addColorStop(1, adjustColor(node.color, -20));
-            ctx.fillStyle = gradient;
-            ctx.shadowColor = node.color;
-            ctx.shadowBlur = 8;
+            ctx.fillStyle = node.color;
             ctx.fill();
             ctx.restore();
-
-            ctx.font = `600 ${fontSize}px sans-serif`;
-            ctx.textAlign = 'center';
-            ctx.textBaseline = 'top';
-            ctx.fillStyle = '#374151';
-            ctx.fillText(label, node.x || 0, (node.y || 0) + nodeSize + 3);
           }}
           linkCanvasObjectMode={() => 'after'}
           linkCanvasObject={(link: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
-            const label = getRelationshipLabel(link.relationshipType);
-            const fontSize = 9 / globalScale;
-            
-            const sourceNode = link.source as { x?: number; y?: number };
-            const targetNode = link.target as { x?: number; y?: number };
+            const sourceNode = link.source as { x?: number; y?: number; name?: string };
+            const targetNode = link.target as { x?: number; y?: number; name?: string };
             
             if (sourceNode.x === undefined || targetNode.x === undefined || sourceNode.y === undefined || targetNode.y === undefined) return;
+            
+            const charAName = sourceNode.name || '';
+            const charBName = targetNode.name || '';
+            const relLabel = getRelationshipLabel(link.relationshipType);
+            const label = `${charAName} ${relLabel} ${charBName}`;
+            const fontSize = 10 / globalScale;
             
             const midX = (sourceNode.x + targetNode.x) / 2;
             const midY = (sourceNode.y + targetNode.y) / 2;
             
-            ctx.font = `${fontSize}px sans-serif`;
+            ctx.font = `600 ${fontSize}px sans-serif`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
             const textWidth = ctx.measureText(label).width;
+            const textHeight = fontSize;
             
             ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
-            ctx.fillRect(midX - textWidth / 2 - 3, midY - fontSize / 2 - 2, textWidth + 6, fontSize + 4);
+            ctx.fillRect(midX - textWidth / 2 - 4, midY - textHeight / 2 - 2, textWidth + 8, textHeight + 4);
             ctx.strokeStyle = link.color;
-            ctx.lineWidth = 1;
-            ctx.strokeRect(midX - textWidth / 2 - 3, midY - fontSize / 2 - 2, textWidth + 6, fontSize + 4);
+            ctx.lineWidth = 1.5;
+            ctx.strokeRect(midX - textWidth / 2 - 4, midY - textHeight / 2 - 2, textWidth + 8, textHeight + 4);
             ctx.fillStyle = link.color;
             ctx.fillText(label, midX, midY);
           }}
@@ -767,12 +764,4 @@ function CharacterRelationshipGraph({ interactions, characters, getRelationshipL
       </div>
     </div>
   );
-}
-
-function adjustColor(hex: string, amount: number): string {
-  const num = parseInt(hex.replace('#', ''), 16);
-  const r = Math.min(255, Math.max(0, (num >> 16) + amount));
-  const g = Math.min(255, Math.max(0, ((num >> 8) & 0x00FF) + amount));
-  const b = Math.min(255, Math.max(0, (num & 0x0000FF) + amount));
-  return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, '0')}`;
 }
