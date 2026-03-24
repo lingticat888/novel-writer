@@ -33,7 +33,7 @@ export function PlotTrackerPanel({ novelId, onClose, initialContent = '', buried
   const { clearPlotPanelInitialContent } = useUIStore();
 
   const [isCreating, setIsCreating] = useState(false);
-  const [newContent, setNewContent] = useState(initialContent);
+  const [newContent, setNewContent] = useState('');
   const [editingPlotId, setEditingPlotId] = useState<string | null>(null);
   const [editingContent, setEditingContent] = useState('');
   const [editingBuriedChapterId, setEditingBuriedChapterId] = useState('');
@@ -44,16 +44,16 @@ export function PlotTrackerPanel({ novelId, onClose, initialContent = '', buried
     loadPlots(novelId);
   }, [novelId, loadPlots]);
 
-  // This effect is intentional - it pre-fills the plot content when user selects text from editor
+  // This effect pre-fills the plot content when user selects text from editor
   useEffect(() => {
     const content = typeof initialContent === 'string' ? initialContent : '';
-    if (content && !isCreating) {
+    if (content) {
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setNewContent(content);
       // eslint-disable-next-line react-hooks/set-state-in-effect
       setIsCreating(true);
     }
-  }, [initialContent, isCreating]);
+  }, [initialContent]);
 
   const handleCreate = async () => {
     if (!newContent.trim()) return;
@@ -333,7 +333,10 @@ export function PlotTrackerPanel({ novelId, onClose, initialContent = '', buried
             </div>
           ) : (
             <button
-              onClick={() => setIsCreating(true)}
+              onClick={() => {
+                setNewContent('');
+                setIsCreating(true);
+              }}
               className="w-full py-2 border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-md text-gray-500 hover:border-indigo-500 hover:text-indigo-500"
             >
               + 记录新伏笔
