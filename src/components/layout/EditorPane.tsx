@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useRef } from 'react';
+import { useEffect, useCallback, useRef, useState } from 'react';
 import { useNovelStore, useEditorStore } from '@/stores';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
@@ -18,6 +18,7 @@ export function EditorPane({ onSetPlot }: { onSetPlot?: (selectedText: string) =
   const { setContent, setWordCount, setSaving, setLastSavedAt, isDirty } = useEditorStore();
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSavedContentRef = useRef<string>('');
+  const [hasSelection, setHasSelection] = useState(false);
 
   const editor = useEditor({
     extensions: [
@@ -32,6 +33,10 @@ export function EditorPane({ onSetPlot }: { onSetPlot?: (selectedText: string) =
       const html = editor.getHTML();
       setContent(html);
       setWordCount(countWords(html));
+    },
+    onSelectionUpdate: ({ editor }) => {
+      const { from, to } = editor.state.selection;
+      setHasSelection(from !== to);
     },
   });
 
@@ -161,12 +166,6 @@ function EditorToolbar({ editor, onSave, onSetPlot }: { editor: ReturnType<typeo
     command();
   };
 
-  const hasSelection = () => {
-    if (!editor) return false;
-    const { from, to } = editor.state.selection;
-    return from !== to;
-  };
-
   return (
     <div className="flex gap-2 mb-4 pb-4 border-b border-gray-200 dark:border-gray-700">
       <button
@@ -254,9 +253,9 @@ function EditorToolbar({ editor, onSave, onSetPlot }: { editor: ReturnType<typeo
 
       <button
         onClick={onSetPlot}
-        disabled={!hasSelection()}
+        disabled={!hasSelection}
         className={`p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 ${
-          hasSelection() ? 'text-amber-600' : 'text-gray-400 cursor-not-allowed'
+          hasSelection ? 'text-amber-600' : 'text-gray-400 cursor-not-allowed'
         }`}
         title="设为伏笔"
       >
