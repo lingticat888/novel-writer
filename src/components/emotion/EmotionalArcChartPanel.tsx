@@ -292,17 +292,18 @@ export function EmotionalArcChartPanel({ novelId, onClose }: EmotionalArcChartPa
                       <XAxis dataKey="name" stroke="#9ca3af" fontSize={12} />
                       <YAxis domain={[-100, 100]} ticks={[-100, -50, 0, 50, 100]} stroke="#9ca3af" fontSize={12} />
                       <Tooltip
-                        content={({ active, payload, label }) => {
+                        content={({ active, payload }) => {
                           if (!active || !payload || !payload.length) return null;
                           const data = payload[0]?.payload;
                           if (!data) return null;
+                          const note = (data.note as string) || '';
                           return (
                             <div className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-3 shadow-lg text-gray-900 dark:text-white">
-                              <div className="text-sm font-medium mb-1">章节: {label}</div>
+                              <div className="text-sm font-medium mb-1">章节: {data.name as string}</div>
                               <div className="text-sm">情感点: {data.emotion as string}</div>
                               <div className="text-sm">强度: {Math.abs(data.rawIntensity as number)}%</div>
-                              {data.note && (data.note as string).trim() && (
-                                <div className="text-sm text-gray-500">备注: {data.note as string}</div>
+                              {note.trim() && (
+                                <div className="text-sm text-gray-500">备注: {note}</div>
                               )}
                             </div>
                           );
