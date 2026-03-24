@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, ReferenceLine } from 'recharts';
 import { useEmotionalArcStore, useNovelStore } from '@/stores';
 import type { EmotionalType } from '@/models';
@@ -45,39 +45,6 @@ const EMOTION_LABELS: Record<EmotionalType, string> = {
   suffering: '虐',
   awkwardness: '尴尬',
 };
-
-interface CustomTooltipProps {
-  active?: boolean;
-  payload?: Array<{ payload: { emotion: string; note?: string; intensity: number } }>;
-  label?: string;
-}
-
-function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
-  const [isDark, setIsDark] = useState(false);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      setIsDark(document.documentElement.classList.contains('dark'));
-    }
-  }, []);
-
-  if (!active || !payload || !payload.length) return null;
-
-  const data = payload[0]?.payload;
-  if (!data) return null;
-
-  return (
-    <div
-      className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-3 shadow-lg"
-      style={{ color: isDark ? '#fff' : '#374151' }}
-    >
-      <div className="text-sm font-medium mb-1">章节: {label}</div>
-      <div className="text-sm">情感点: {data.emotion}</div>
-      <div className="text-sm">强度: {Math.abs(data.intensity)}%</div>
-      {data.note && <div className="text-sm text-gray-500">备注: {data.note}</div>}
-    </div>
-  );
-}
 
 interface EmotionalArcChartPanelProps {
   novelId: string;
@@ -182,12 +149,15 @@ export function EmotionalArcChartPanel({ novelId, onClose }: EmotionalArcChartPa
     return sortedPoints.map((point) => {
       const chapter = allChapters.find((c) => c.id === point.chapterId);
       const isNegative = NEGATIVE_EMOTIONS.includes(point.emotion);
+      const emotionLabel = EMOTION_LABELS[point.emotion];
+      const intensityValue = isNegative ? -point.intensity : point.intensity;
       return {
         name: chapter?.title || point.chapterId.slice(0, 8),
-        emotion: EMOTION_LABELS[point.emotion],
-        intensity: isNegative ? -point.intensity : point.intensity,
+        emotion: emotionLabel,
+        intensity: intensityValue,
+        rawIntensity: point.intensity,
         color: EMOTION_COLORS[point.emotion],
-        note: point.note,
+        note: point.note || '',
         isNegative,
       };
     });
@@ -321,7 +291,23 @@ export function EmotionalArcChartPanel({ novelId, onClose }: EmotionalArcChartPa
                       <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                       <XAxis dataKey="name" stroke="#9ca3af" fontSize={12} />
                       <YAxis domain={[-100, 100]} ticks={[-100, -50, 0, 50, 100]} stroke="#9ca3af" fontSize={12} />
-                      <Tooltip content={<CustomTooltip />} />
+                      <Tooltip
+                        content={({ active, payload, label }) => {
+                          if (!active || !payload || !payload.length) return null;
+                          const data = payload[0]?.payload;
+                          if (!data) return null;
+                          return (
+                            <div className="bg-white dark:bg-gray-800 border dark:border-gray-700 rounded-lg p-3 shadow-lg text-gray-900 dark:text-white">
+                              <div className="text-sm font-medium mb-1">章节: {label}</div>
+                              <div className="text-sm">情感点: {data.emotion as string}</div>
+                              <div className="text-sm">强度: {Math.abs(data.rawIntensity as number)}%</div>
+                              {data.note && (data.note as string).trim() && (
+                                <div className="text-sm text-gray-500">备注: {data.note as string}</div>
+                              )}
+                            </div>
+                          );
+                        }}
+                      />
                       <ReferenceLine y={0} stroke="#6b7280" strokeWidth={2} />
                       <Line
                         type="monotone"
