@@ -146,12 +146,16 @@ export function EmotionalArcChartPanel({ novelId, onClose }: EmotionalArcChartPa
     const sortedPoints = [...selectedArc.points].sort(
       (a, b) => allChapters.findIndex((c) => c.id === a.chapterId) - allChapters.findIndex((c) => c.id === b.chapterId)
     );
-    const data = sortedPoints.map((point) => {
+    const chapterPointCounts: Record<string, number> = {};
+    return sortedPoints.map((point, index) => {
       const chapter = allChapters.find((c) => c.id === point.chapterId);
       const isNegative = NEGATIVE_EMOTIONS.includes(point.emotion);
       const emotionLabel = EMOTION_LABELS[point.emotion];
       const intensityValue = isNegative ? -point.intensity : point.intensity;
+      chapterPointCounts[point.chapterId] = (chapterPointCounts[point.chapterId] || 0) + 1;
+      const xValue = index + (chapterPointCounts[point.chapterId] - 1) * 0.1;
       return {
+        xValue,
         name: chapter?.title || point.chapterId.slice(0, 8),
         emotion: emotionLabel,
         intensity: intensityValue,
@@ -162,8 +166,6 @@ export function EmotionalArcChartPanel({ novelId, onClose }: EmotionalArcChartPa
         chapterId: point.chapterId,
       };
     });
-    console.log('chartData:', data);
-    return data;
   };
 
   const chartData = getChartData();
@@ -292,7 +294,17 @@ export function EmotionalArcChartPanel({ novelId, onClose }: EmotionalArcChartPa
                   <ResponsiveContainer width="100%" height={200}>
                     <LineChart key={selectedArcId} data={chartData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                      <XAxis dataKey="name" stroke="#9ca3af" fontSize={12} />
+                      <XAxis 
+                        dataKey="xValue" 
+                        type="number"
+                        domain={[0, chartData.length]}
+                        tickFormatter={(_, index) => {
+                          const item = chartData[index];
+                          return item ? item.name : '';
+                        }}
+                        stroke="#9ca3af" 
+                        fontSize={12} 
+                      />
                       <YAxis domain={[-100, 100]} ticks={[-100, -50, 0, 50, 100]} stroke="#9ca3af" fontSize={12} />
                       <Tooltip />
                       <ReferenceLine y={0} stroke="#6b7280" strokeWidth={2} />
