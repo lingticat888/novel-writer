@@ -289,23 +289,30 @@ export function EmotionalArcChartPanel({ novelId, onClose }: EmotionalArcChartPa
                 </div>
 
                 {chartData.length > 0 ? (
-                  <ResponsiveContainer width="100%" height={200}>
-                    <LineChart key={selectedArcId} data={chartData}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                      <XAxis dataKey="name" stroke="#9ca3af" fontSize={12} />
-                      <YAxis domain={[-100, 100]} ticks={[-100, -50, 0, 50, 100]} stroke="#9ca3af" fontSize={12} />
-                      <Tooltip />
-                      <ReferenceLine y={0} stroke="#6b7280" strokeWidth={2} />
-                      <Line
-                        type="monotone"
-                        dataKey="intensity"
-                        stroke="#6366f1"
-                        strokeWidth={2}
-                        dot={{ fill: '#6366f1', strokeWidth: 2, r: 4 }}
-                        activeDot={{ r: 6 }}
-                      />
-                    </LineChart>
-                  </ResponsiveContainer>
+                  <>
+                    <div className="text-xs text-gray-500 mb-2 p-2 bg-gray-100 dark:bg-gray-700 rounded">
+                      {chartData.map((d, i) => (
+                        <div key={i}>{i}: {d.name} | {d.emotion} | {d.intensity} | {d.rawIntensity}</div>
+                      ))}
+                    </div>
+                    <ResponsiveContainer width="100%" height={200}>
+                      <LineChart key={selectedArcId} data={chartData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                        <XAxis dataKey="name" stroke="#9ca3af" fontSize={12} />
+                        <YAxis domain={[-100, 100]} ticks={[-100, -50, 0, 50, 100]} stroke="#9ca3af" fontSize={12} />
+                        <Tooltip />
+                        <ReferenceLine y={0} stroke="#6b7280" strokeWidth={2} />
+                        <Line
+                          type="monotone"
+                          dataKey="intensity"
+                          stroke="#6366f1"
+                          strokeWidth={2}
+                          dot={{ fill: '#6366f1', strokeWidth: 2, r: 4 }}
+                          activeDot={{ r: 6 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </>
                 ) : (
                   <div className="text-center py-8 text-gray-500">暂无数据，添加情感点开始</div>
                 )}
