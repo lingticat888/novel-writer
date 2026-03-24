@@ -9,7 +9,7 @@ interface CharacterInteractionState {
   error: string | null;
 
   loadInteractions: (novelId: string) => Promise<void>;
-  createInteraction: (data: CreateInteractionDTO) => Promise<CharacterInteraction>;
+  createInteraction: (data: CreateInteractionDTO) => Promise<CharacterInteraction | null>;
   updateRelationshipType: (id: string, relationshipType: RelationshipType) => Promise<void>;
   addEvent: (interactionId: string, data: AddInteractionEventDTO) => Promise<void>;
   deleteEvent: (interactionId: string, eventId: string) => Promise<void>;
@@ -45,13 +45,14 @@ export const useCharacterInteractionStore = create<CharacterInteractionState>((s
       );
       if (existing) {
         set({ error: '这两个角色之间已经存在交互关系' });
-        return existing;
+        return null;
       }
 
       const interaction = await characterInteractionRepository.create(data);
       set((state) => ({
         interactions: [...state.interactions, interaction],
         selectedInteractionId: interaction.id,
+        error: null,
       }));
       return interaction;
     } catch (err) {

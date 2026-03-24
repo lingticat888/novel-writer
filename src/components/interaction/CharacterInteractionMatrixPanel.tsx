@@ -4,6 +4,21 @@ import { characterRepository } from '@/services/characterRepository';
 import type { RelationshipType, Character, CharacterInteraction } from '@/models';
 import ForceGraph2D from 'react-force-graph-2d';
 
+interface RelationshipConfig {
+  type: RelationshipType | 'custom';
+  label: string;
+  color: string;
+}
+
+const DEFAULT_RELATIONSHIPS: RelationshipConfig[] = [
+  { type: 'family', label: '家人', color: '#8b5cf6' },
+  { type: 'friendship', label: '朋友', color: '#3b82f6' },
+  { type: 'romance', label: '恋人', color: '#ec4899' },
+  { type: 'enmity', label: '敌对', color: '#f97316' },
+  { type: 'stranger', label: '陌生人', color: '#6b7280' },
+  { type: 'other', label: '其他', color: '#9ca3af' },
+];
+
 const RELATIONSHIP_LABELS: Record<RelationshipType, string> = {
   family: '家人',
   friendship: '朋友',
@@ -51,10 +66,16 @@ export function CharacterInteractionMatrixPanel({ novelId, onClose }: CharacterI
   const [selectedCharacterAId, setSelectedCharacterAId] = useState('');
   const [selectedCharacterBId, setSelectedCharacterBId] = useState('');
   const [newRelationshipType, setNewRelationshipType] = useState<RelationshipType>('stranger');
+  const [customRelationships, setCustomRelationships] = useState<RelationshipConfig[]>([]);
+  const [isAddingCustom, setIsAddingCustom] = useState(false);
+  const [newCustomLabel, setNewCustomLabel] = useState('');
+  const [newCustomColor, setNewCustomColor] = useState('#6366f1');
   const [addingEventToId, setAddingEventToId] = useState<string | null>(null);
   const [newEventChapterId, setNewEventChapterId] = useState('');
   const [newEventType, setNewEventType] = useState('');
   const [newEventDescription, setNewEventDescription] = useState('');
+
+  const allRelationships = [...DEFAULT_RELATIONSHIPS, ...customRelationships];
 
   useEffect(() => {
     loadInteractions(novelId);
@@ -68,6 +89,19 @@ export function CharacterInteractionMatrixPanel({ novelId, onClose }: CharacterI
   const getCharacterById = useCallback((id: string): Character | undefined => {
     return characters.find((c) => c.id === id);
   }, [characters]);
+
+  const getRelationshipLabel = useCallback((type: string): string => {
+    const found = allRelationships.find(r => r.type === type);
+    return found?.label || type;
+  }, [allRelationships]);
+
+  const getRelationshipColor = useCallback((type: string): string => {
+    if (type in RELATIONSHIP_COLORS) {
+      return RELATIONSHIP_COLORS[type as RelationshipType];
+    }
+    const found = customRelationships.find(r => r.type === type);
+    return found?.color || '#6366f1';
+  }, [customRelationships]);
 
   const filteredInteractions = filterType === 'all'
     ? interactions
@@ -85,16 +119,34 @@ export function CharacterInteractionMatrixPanel({ novelId, onClose }: CharacterI
 
   const handleCreate = async () => {
     if (!selectedCharacterAId || !selectedCharacterBId || selectedCharacterAId === selectedCharacterBId) return;
-    await createInteraction({
+    
+    const result = await createInteraction({
       novelId,
       characterAId: selectedCharacterAId,
       characterBId: selectedCharacterBId,
       relationshipType: newRelationshipType,
     });
-    setSelectedCharacterAId('');
-    setSelectedCharacterBId('');
-    setNewRelationshipType('stranger');
-    setIsCreating(false);
+
+    if (result) {
+      setSelectedCharacterAId('');
+      setSelectedCharacterBId('');
+      setNewRelationshipType('stranger');
+      setIsCreating(false);
+      setFilterType('all');
+    }
+  };
+
+  const handleAddCustomRelationship = () => {
+    if (!newCustomLabel.trim()) return;
+    const newType = `custom_${Date.now()}` as RelationshipType;
+    setCustomRelationships([...customRelationships, {
+      type: newType,
+      label: newCustomLabel.trim(),
+      color: newCustomColor,
+    }]);
+    setNewRelationshipType(newType);
+    setNewCustomLabel('');
+    setIsAddingCustom(false);
   };
 
   const handleAddEvent = async () => {
@@ -218,7 +270,7 @@ export function CharacterInteractionMatrixPanel({ novelId, onClose }: CharacterI
                           <div className="flex items-center gap-3">
                             <span
                               className="w-3 h-3 rounded-full"
-                              style={{ backgroundColor: RELATIONSHIP_COLORS[interaction.relationshipType] }}
+                              style={{ backgroundColor: getRelationshipColor(interaction.relationshipType) }}
                             />
                             <span className="font-medium text-gray-900 dark:text-white">
                               {charA?.name || '未知'} ↔ {charB?.name || '未知'}
@@ -226,11 +278,11 @@ export function CharacterInteractionMatrixPanel({ novelId, onClose }: CharacterI
                             <span
                               className="px-2 py-0.5 text-xs rounded-full"
                               style={{
-                                backgroundColor: `${RELATIONSHIP_COLORS[interaction.relationshipType]}20`,
-                                color: RELATIONSHIP_COLORS[interaction.relationshipType]
+                                backgroundColor: `${getRelationshipColor(interaction.relationshipType)}20`,
+                                color: getRelationshipColor(interaction.relationshipType)
                               }}
                             >
-                              {RELATIONSHIP_LABELS[interaction.relationshipType]}
+                              {getRelationshipLabel(interaction.relationshipType)}
                             </span>
                           </div>
                           <div className="flex items-center gap-3">
@@ -278,8 +330,8 @@ export function CharacterInteractionMatrixPanel({ novelId, onClose }: CharacterI
                               onChange={(e) => updateRelationshipType(interaction.id, e.target.value as RelationshipType)}
                               className="w-full px-2 py-1 text-sm border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                             >
-                              {(Object.keys(RELATIONSHIP_LABELS) as RelationshipType[]).map((type) => (
-                                <option key={type} value={type}>{RELATIONSHIP_LABELS[type]}</option>
+                              {allRelationships.map((rel) => (
+                                <option key={rel.type} value={rel.type}>{rel.label}</option>
                               ))}
                             </select>
                           </div>
@@ -414,7 +466,12 @@ export function CharacterInteractionMatrixPanel({ novelId, onClose }: CharacterI
             <CharacterRelationshipGraph
               interactions={filteredInteractions}
               characters={characters}
-              onSelectInteraction={(id) => setExpandedInteractionId(id)}
+              getRelationshipLabel={getRelationshipLabel}
+              getRelationshipColor={getRelationshipColor}
+              onSelectInteraction={(id) => {
+                setExpandedInteractionId(id);
+                setViewMode('list');
+              }}
             />
           )}
         </div>
@@ -444,18 +501,68 @@ export function CharacterInteractionMatrixPanel({ novelId, onClose }: CharacterI
                   ))}
                 </select>
               </div>
-              <select
-                value={newRelationshipType}
-                onChange={(e) => setNewRelationshipType(e.target.value as RelationshipType)}
-                className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
-              >
-                {(Object.keys(RELATIONSHIP_LABELS) as RelationshipType[]).map((type) => (
-                  <option key={type} value={type}>{RELATIONSHIP_LABELS[type]}</option>
-                ))}
-              </select>
+              
+              <div className="flex gap-2 items-center">
+                <select
+                  value={newRelationshipType}
+                  onChange={(e) => setNewRelationshipType(e.target.value as RelationshipType)}
+                  className="flex-1 px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                >
+                  {allRelationships.map((rel) => (
+                    <option key={rel.type} value={rel.type}>{rel.label}</option>
+                  ))}
+                </select>
+                <button
+                  onClick={() => setIsAddingCustom(true)}
+                  className="px-3 py-2 text-sm text-indigo-600 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-md border border-indigo-200 dark:border-indigo-700"
+                >
+                  + 自定义
+                </button>
+              </div>
+
+              {isAddingCustom && (
+                <div className="flex gap-2 items-center p-3 bg-gray-50 dark:bg-gray-700/50 rounded border dark:border-gray-600">
+                  <input
+                    type="text"
+                    value={newCustomLabel}
+                    onChange={(e) => setNewCustomLabel(e.target.value)}
+                    placeholder="关系名称"
+                    className="flex-1 px-2 py-1 text-sm border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                  />
+                  <input
+                    type="color"
+                    value={newCustomColor}
+                    onChange={(e) => setNewCustomColor(e.target.value)}
+                    className="w-8 h-8 rounded cursor-pointer"
+                  />
+                  <button
+                    onClick={handleAddCustomRelationship}
+                    disabled={!newCustomLabel.trim()}
+                    className="px-3 py-1 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700 disabled:opacity-50"
+                  >
+                    添加
+                  </button>
+                  <button
+                    onClick={() => {
+                      setIsAddingCustom(false);
+                      setNewCustomLabel('');
+                    }}
+                    className="px-2 py-1 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600 rounded"
+                  >
+                    取消
+                  </button>
+                </div>
+              )}
+
               <div className="flex gap-2 justify-end">
                 <button
-                  onClick={() => setIsCreating(false)}
+                  onClick={() => {
+                    setIsCreating(false);
+                    setIsAddingCustom(false);
+                    setNewCustomLabel('');
+                    setSelectedCharacterAId('');
+                    setSelectedCharacterBId('');
+                  }}
                   className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
                 >
                   取消
@@ -486,17 +593,13 @@ export function CharacterInteractionMatrixPanel({ novelId, onClose }: CharacterI
 interface CharacterRelationshipGraphProps {
   interactions: CharacterInteraction[];
   characters: Character[];
+  getRelationshipLabel: (type: string) => string;
+  getRelationshipColor: (type: string) => string;
   onSelectInteraction: (id: string) => void;
 }
 
-function CharacterRelationshipGraph({ interactions, characters, onSelectInteraction }: CharacterRelationshipGraphProps) {
+function CharacterRelationshipGraph({ interactions, characters, getRelationshipLabel, getRelationshipColor, onSelectInteraction }: CharacterRelationshipGraphProps) {
   const [selectedCharacterId, setSelectedCharacterId] = useState<string | null>(null);
-
-  const getInteractionsForCharacter = (charId: string) => {
-    return interactions.filter(
-      (i) => i.characterAId === charId || i.characterBId === charId
-    );
-  };
 
   const getRelatedCharacterIds = (charId: string): string[] => {
     const related = new Set<string>();
@@ -517,14 +620,14 @@ function CharacterRelationshipGraph({ interactions, characters, onSelectInteract
         id: char.id,
         name: char.name,
         color: selectedCharacterId === char.id ? '#6366f1' : '#3b82f6',
-        val: 8 + getInteractionsForCharacter(char.id).length * 2,
+        val: 6,
       })),
     links: interactions
       .filter((i) => !selectedCharacterId || (i.characterAId === selectedCharacterId || i.characterBId === selectedCharacterId))
       .map((i) => ({
         source: i.characterAId,
         target: i.characterBId,
-        color: RELATIONSHIP_COLORS[i.relationshipType],
+        color: getRelationshipColor(i.relationshipType),
         relationshipType: i.relationshipType,
         interactionId: i.id,
       })),
@@ -572,7 +675,7 @@ function CharacterRelationshipGraph({ interactions, characters, onSelectInteract
           linkWidth={2}
           linkDirectionalArrowLength={0}
           linkDirectionalArrowRelPos={1}
-          linkCurvature={0.2}
+          linkCurvature={0.15}
           onNodeClick={(node: any) => {
             setSelectedCharacterId(selectedCharacterId === node.id ? null : node.id);
           }}
@@ -582,8 +685,8 @@ function CharacterRelationshipGraph({ interactions, characters, onSelectInteract
           nodeCanvasObjectMode={() => 'after'}
           nodeCanvasObject={(node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
             const label = node.name;
-            const fontSize = 12 / globalScale;
-            const nodeSize = node.val || 8;
+            const fontSize = 11 / globalScale;
+            const nodeSize = node.val || 6;
 
             ctx.save();
             ctx.beginPath();
@@ -593,18 +696,44 @@ function CharacterRelationshipGraph({ interactions, characters, onSelectInteract
               node.x || 0, node.y || 0, nodeSize
             );
             gradient.addColorStop(0, node.color);
-            gradient.addColorStop(1, adjustColor(node.color, -30));
+            gradient.addColorStop(1, adjustColor(node.color, -20));
             ctx.fillStyle = gradient;
             ctx.shadowColor = node.color;
-            ctx.shadowBlur = 10;
+            ctx.shadowBlur = 8;
             ctx.fill();
             ctx.restore();
 
             ctx.font = `600 ${fontSize}px sans-serif`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'top';
-            ctx.fillStyle = '#1f2937';
-            ctx.fillText(label, node.x || 0, (node.y || 0) + nodeSize + 4);
+            ctx.fillStyle = '#374151';
+            ctx.fillText(label, node.x || 0, (node.y || 0) + nodeSize + 3);
+          }}
+          linkCanvasObjectMode={() => 'after'}
+          linkCanvasObject={(link: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
+            const label = getRelationshipLabel(link.relationshipType);
+            const fontSize = 9 / globalScale;
+            
+            const sourceNode = link.source as { x?: number; y?: number };
+            const targetNode = link.target as { x?: number; y?: number };
+            
+            if (sourceNode.x === undefined || targetNode.x === undefined || sourceNode.y === undefined || targetNode.y === undefined) return;
+            
+            const midX = (sourceNode.x + targetNode.x) / 2;
+            const midY = (sourceNode.y + targetNode.y) / 2;
+            
+            ctx.font = `${fontSize}px sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            const textWidth = ctx.measureText(label).width;
+            
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
+            ctx.fillRect(midX - textWidth / 2 - 3, midY - fontSize / 2 - 2, textWidth + 6, fontSize + 4);
+            ctx.strokeStyle = link.color;
+            ctx.lineWidth = 1;
+            ctx.strokeRect(midX - textWidth / 2 - 3, midY - fontSize / 2 - 2, textWidth + 6, fontSize + 4);
+            ctx.fillStyle = link.color;
+            ctx.fillText(label, midX, midY);
           }}
           cooldownTicks={100}
           d3AlphaDecay={0.02}
@@ -613,13 +742,27 @@ function CharacterRelationshipGraph({ interactions, characters, onSelectInteract
       </div>
 
       <div className="absolute top-3 right-3 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-lg shadow-sm px-3 py-2">
-        <div className="flex gap-3 text-xs">
-          {(Object.keys(RELATIONSHIP_LABELS) as RelationshipType[]).map((type) => (
-            <div key={type} className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: RELATIONSHIP_COLORS[type] }} />
-              <span className="text-gray-600 dark:text-gray-400">{RELATIONSHIP_LABELS[type]}</span>
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs max-w-[200px]">
+          {DEFAULT_RELATIONSHIPS.map((rel) => (
+            <div key={rel.type} className="flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full" style={{ backgroundColor: rel.color }} />
+              <span className="text-gray-600 dark:text-gray-400">{rel.label}</span>
             </div>
           ))}
+          {interactions.filter(i => !DEFAULT_RELATIONSHIPS.find(r => r.type === i.relationshipType)).length > 0 && (
+            <div className="w-full mt-1 pt-1 border-t border-gray-200 dark:border-gray-700">
+              {interactions
+                .filter(i => !DEFAULT_RELATIONSHIPS.find(r => r.type === i.relationshipType))
+                .map(i => i.relationshipType)
+                .filter((v, idx, arr) => arr.indexOf(v) === idx)
+                .map(type => (
+                  <div key={type} className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: getRelationshipColor(type) }} />
+                    <span className="text-gray-600 dark:text-gray-400">{getRelationshipLabel(type)}</span>
+                  </div>
+                ))}
+            </div>
+          )}
         </div>
       </div>
     </div>
