@@ -50,7 +50,7 @@ export class UnresolvedPlotRepository {
 
   async update(
     id: string, 
-    data: Partial<Pick<UnresolvedPlot, 'status' | 'expectedResolveChapterId' | 'actualResolveChapterId' | 'resolveDescription' | 'relatedCharacterIds'>>
+    data: Partial<Pick<UnresolvedPlot, 'content' | 'buriedChapterId' | 'status' | 'expectedResolveChapterId' | 'actualResolveChapterId' | 'resolveDescription' | 'relatedCharacterIds'>>
   ): Promise<void> {
     await db.unresolvedPlots.update(id, {
       ...data,

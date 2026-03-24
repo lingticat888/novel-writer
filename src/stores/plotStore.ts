@@ -10,6 +10,7 @@ interface PlotState {
 
   loadPlots: (novelId: string) => Promise<void>;
   createPlot: (data: CreatePlotDTO) => Promise<UnresolvedPlot>;
+  updatePlot: (id: string, data: { content?: string; buriedChapterId?: string }) => Promise<void>;
   resolvePlot: (id: string, chapterId: string, description: string) => Promise<void>;
   invalidatePlot: (id: string) => Promise<void>;
   deletePlot: (id: string) => Promise<void>;
@@ -44,6 +45,22 @@ export const usePlotStore = create<PlotState>((set) => ({
     } catch (err) {
       set({ error: '创建伏笔失败' });
       throw err;
+    }
+  },
+
+  updatePlot: async (id: string, data: { content?: string; buriedChapterId?: string }) => {
+    set({ error: null });
+    try {
+      await unresolvedPlotRepository.update(id, data);
+      set((state) => ({
+        plots: state.plots.map((p) =>
+          p.id === id
+            ? { ...p, ...data, updatedAt: new Date() }
+            : p
+        ),
+      }));
+    } catch (err) {
+      set({ error: '更新伏笔失败' });
     }
   },
 

@@ -198,7 +198,13 @@ export function NovelEditorPage() {
       )}
 
       {isPlotTrackerPanelOpen && currentNovel && (
-        <PlotTrackerPanel novelId={currentNovel.id} onClose={closePlotTrackerPanel} initialContent={plotPanelInitialContent} buriedChapterId={currentChapter?.id || ''} />
+        <PlotTrackerPanel 
+          novelId={currentNovel.id} 
+          onClose={closePlotTrackerPanel} 
+          initialContent={plotPanelInitialContent} 
+          buriedChapterId={currentChapter?.id || ''}
+          chapters={currentNovel.volumes?.flatMap(v => v.chapters || []) || []}
+        />
       )}
 
       {isChapterSummaryPanelOpen && currentNovel && (

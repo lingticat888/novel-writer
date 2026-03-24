@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { usePlotStore, useUIStore } from '@/stores';
-import type { PlotStatus } from '@/models';
+import type { PlotStatus, Chapter } from '@/models';
 
 const STATUS_LABELS: Record<PlotStatus, string> = {
   buried: '未回收',
@@ -15,14 +15,16 @@ interface PlotTrackerPanelProps {
   onClose: () => void;
   initialContent?: string;
   buriedChapterId?: string;
+  chapters?: Chapter[];
 }
 
-export function PlotTrackerPanel({ novelId, onClose, initialContent = '', buriedChapterId = '' }: PlotTrackerPanelProps) {
+export function PlotTrackerPanel({ novelId, onClose, initialContent = '', buriedChapterId = '', chapters = [] }: PlotTrackerPanelProps) {
   const {
     plots,
     filterStatus,
     loadPlots,
     createPlot,
+    updatePlot,
     resolvePlot,
     invalidatePlot,
     deletePlot,
@@ -33,6 +35,8 @@ export function PlotTrackerPanel({ novelId, onClose, initialContent = '', buried
   const [isCreating, setIsCreating] = useState(false);
   const [newContent, setNewContent] = useState(initialContent);
   const [editingPlotId, setEditingPlotId] = useState<string | null>(null);
+  const [editingContent, setEditingContent] = useState('');
+  const [editingBuriedChapterId, setEditingBuriedChapterId] = useState('');
   const [resolveChapterId, setResolveChapterId] = useState('');
   const [resolveDescription, setResolveDescription] = useState('');
 
@@ -62,24 +66,37 @@ export function PlotTrackerPanel({ novelId, onClose, initialContent = '', buried
     clearPlotPanelInitialContent();
   };
 
-  const handleResolve = async (plotId: string) => {
-    if (!resolveChapterId || !resolveDescription) return;
-    await resolvePlot(plotId, resolveChapterId, resolveDescription);
-    setResolveChapterId('');
-    setResolveDescription('');
-    setEditingPlotId(null);
-  };
-
-  const startEditing = (plotId: string) => {
-    setEditingPlotId(plotId);
+  const startEditing = (plot: { id: string; content: string; buriedChapterId: string }) => {
+    setEditingPlotId(plot.id);
+    setEditingContent(plot.content);
+    setEditingBuriedChapterId(plot.buriedChapterId);
     setResolveChapterId('');
     setResolveDescription('');
   };
 
   const cancelEditing = () => {
     setEditingPlotId(null);
+    setEditingContent('');
+    setEditingBuriedChapterId('');
     setResolveChapterId('');
     setResolveDescription('');
+  };
+
+  const handleUpdate = async (plotId: string) => {
+    if (!editingContent.trim()) return;
+    await updatePlot(plotId, {
+      content: editingContent.trim(),
+      buriedChapterId: editingBuriedChapterId,
+    });
+    cancelEditing();
+  };
+
+  const handleResolve = async (plotId: string) => {
+    if (!resolveChapterId || !resolveDescription) return;
+    await resolvePlot(plotId, resolveChapterId, resolveDescription);
+    setResolveChapterId('');
+    setResolveDescription('');
+    setEditingPlotId(null);
   };
 
   const filteredPlots = filterStatus === 'all'
@@ -137,7 +154,9 @@ export function PlotTrackerPanel({ novelId, onClose, initialContent = '', buried
             </div>
           ) : (
             <div className="space-y-3">
-              {filteredPlots.map((plot) => (
+              {filteredPlots.map((plot) => {
+                const buriedChapter = chapters.find(c => c.id === plot.buriedChapterId);
+                return (
                 <div
                   key={plot.id}
                   className={`p-4 rounded-lg border-l-4 ${
@@ -150,7 +169,7 @@ export function PlotTrackerPanel({ novelId, onClose, initialContent = '', buried
                 >
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-1">
+                      <div className="flex items-center gap-2 mb-1 flex-wrap">
                         <span className={`px-2 py-0.5 text-xs rounded-full ${
                           plot.status === 'buried'
                             ? 'bg-amber-200 text-amber-800'
@@ -160,48 +179,91 @@ export function PlotTrackerPanel({ novelId, onClose, initialContent = '', buried
                         }`}>
                           {STATUS_LABELS[plot.status]}
                         </span>
+                        {buriedChapter && (
+                          <span className="text-xs text-gray-500 dark:text-gray-400">
+                            埋于: {buriedChapter.title}
+                          </span>
+                        )}
                       </div>
-                      <p className="text-gray-900 dark:text-white">{plot.content}</p>
-                      {plot.status === 'buried' && (
-                        <div className="mt-3 flex gap-2">
-                          {editingPlotId === plot.id ? (
-                            <>
-                              <input
-                                type="text"
-                                value={resolveChapterId}
-                                onChange={(e) => setResolveChapterId(e.target.value)}
-                                placeholder="回收章节ID"
-                                className="flex-1 px-2 py-1 text-sm border rounded dark:bg-gray-700 dark:border-gray-600"
-                              />
-                              <input
-                                type="text"
-                                value={resolveDescription}
-                                onChange={(e) => setResolveDescription(e.target.value)}
-                                placeholder="回收描述"
-                                className="flex-1 px-2 py-1 text-sm border rounded dark:bg-gray-700 dark:border-gray-600"
-                              />
-                              <button
-                                onClick={() => handleResolve(plot.id)}
-                                className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700"
-                              >
-                                保存
-                              </button>
-                              <button
-                                onClick={cancelEditing}
-                                className="px-3 py-1 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
-                              >
-                                取消
-                              </button>
-                            </>
-                          ) : (
+                      {editingPlotId === plot.id ? (
+                        <div className="space-y-2 mt-2">
+                          <textarea
+                            value={editingContent}
+                            onChange={(e) => setEditingContent(e.target.value)}
+                            rows={2}
+                            className="w-full px-2 py-1 text-sm border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                            autoFocus
+                          />
+                          <select
+                            value={editingBuriedChapterId}
+                            onChange={(e) => setEditingBuriedChapterId(e.target.value)}
+                            className="w-full px-2 py-1 text-sm border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                          >
+                            <option value="">选择章节</option>
+                            {chapters.map(ch => (
+                              <option key={ch.id} value={ch.id}>{ch.title}</option>
+                            ))}
+                          </select>
+                          <div className="flex gap-2">
                             <button
-                              onClick={() => startEditing(plot.id)}
-                              className="px-3 py-1 text-sm bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 rounded hover:bg-green-200 dark:hover:bg-green-900/50"
+                              onClick={() => handleUpdate(plot.id)}
+                              className="px-3 py-1 text-sm bg-indigo-600 text-white rounded hover:bg-indigo-700"
                             >
-                              标记回收
+                              保存
                             </button>
-                          )}
+                            <button
+                              onClick={cancelEditing}
+                              className="px-3 py-1 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                            >
+                              取消
+                            </button>
+                          </div>
                         </div>
+                      ) : (
+                        <>
+                          <p className="text-gray-900 dark:text-white">{plot.content}</p>
+                          {plot.status === 'buried' && (
+                            <div className="mt-3 flex gap-2 flex-wrap">
+                              {editingPlotId === plot.id ? (
+                                <>
+                                  <input
+                                    type="text"
+                                    value={resolveChapterId}
+                                    onChange={(e) => setResolveChapterId(e.target.value)}
+                                    placeholder="回收章节ID"
+                                    className="flex-1 px-2 py-1 text-sm border rounded dark:bg-gray-700 dark:border-gray-600"
+                                  />
+                                  <input
+                                    type="text"
+                                    value={resolveDescription}
+                                    onChange={(e) => setResolveDescription(e.target.value)}
+                                    placeholder="回收描述"
+                                    className="flex-1 px-2 py-1 text-sm border rounded dark:bg-gray-700 dark:border-gray-600"
+                                  />
+                                  <button
+                                    onClick={() => handleResolve(plot.id)}
+                                    className="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700"
+                                  >
+                                    保存
+                                  </button>
+                                  <button
+                                    onClick={cancelEditing}
+                                    className="px-3 py-1 text-sm text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                                  >
+                                    取消
+                                  </button>
+                                </>
+                              ) : (
+                                <button
+                                  onClick={() => startEditing({ id: plot.id, content: plot.content, buriedChapterId: plot.buriedChapterId })}
+                                  className="px-3 py-1 text-sm bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded hover:bg-blue-200 dark:hover:bg-blue-900/50"
+                                >
+                                  编辑
+                                </button>
+                              )}
+                            </div>
+                          )}
+                        </>
                       )}
                       {plot.status === 'resolved' && plot.resolveDescription && (
                         <p className="mt-2 text-sm text-green-700 dark:text-green-400">
@@ -227,7 +289,7 @@ export function PlotTrackerPanel({ novelId, onClose, initialContent = '', buried
                     </div>
                   </div>
                 </div>
-              ))}
+              )})}
             </div>
           )}
         </div>
@@ -243,6 +305,16 @@ export function PlotTrackerPanel({ novelId, onClose, initialContent = '', buried
                 className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
                 autoFocus
               />
+              <select
+                value={buriedChapterId}
+                onChange={(e) => {}}
+                className="w-full px-2 py-1 text-sm border rounded dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+              >
+                <option value="">选择埋设章节</option>
+                {chapters.map(ch => (
+                  <option key={ch.id} value={ch.id}>{ch.title}</option>
+                ))}
+              </select>
               <div className="flex gap-2 justify-end">
                 <button
                   onClick={() => setIsCreating(false)}
