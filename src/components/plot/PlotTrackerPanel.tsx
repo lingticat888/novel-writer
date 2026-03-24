@@ -13,9 +13,11 @@ const STATUS_TABS: (PlotStatus | 'all')[] = ['all', 'buried', 'resolved', 'inval
 interface PlotTrackerPanelProps {
   novelId: string;
   onClose: () => void;
+  initialContent?: string;
+  buriedChapterId?: string;
 }
 
-export function PlotTrackerPanel({ novelId, onClose }: PlotTrackerPanelProps) {
+export function PlotTrackerPanel({ novelId, onClose, initialContent = '', buriedChapterId = '' }: PlotTrackerPanelProps) {
   const {
     plots,
     filterStatus,
@@ -28,7 +30,7 @@ export function PlotTrackerPanel({ novelId, onClose }: PlotTrackerPanelProps) {
   } = usePlotStore();
 
   const [isCreating, setIsCreating] = useState(false);
-  const [newContent, setNewContent] = useState('');
+  const [newContent, setNewContent] = useState(initialContent);
   const [editingPlotId, setEditingPlotId] = useState<string | null>(null);
   const [resolveChapterId, setResolveChapterId] = useState('');
   const [resolveDescription, setResolveDescription] = useState('');
@@ -37,12 +39,22 @@ export function PlotTrackerPanel({ novelId, onClose }: PlotTrackerPanelProps) {
     loadPlots(novelId);
   }, [novelId, loadPlots]);
 
+  // This effect is intentional - it pre-fills the plot content when user selects text from editor
+  useEffect(() => {
+    if (initialContent && !isCreating) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setNewContent(initialContent);
+      // eslint-disable-next-line react-hooks/set-state-in-effect
+      setIsCreating(true);
+    }
+  }, [initialContent, isCreating]);
+
   const handleCreate = async () => {
     if (!newContent.trim()) return;
     await createPlot({
       novelId,
       content: newContent.trim(),
-      buriedChapterId: '',
+      buriedChapterId,
     });
     setNewContent('');
     setIsCreating(false);

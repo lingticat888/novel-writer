@@ -30,7 +30,8 @@ interface UIState {
   closeResourceLedgerPanel: () => void;
 
   isPlotTrackerPanelOpen: boolean;
-  openPlotTrackerPanel: () => void;
+  plotPanelInitialContent: string;
+  openPlotTrackerPanel: (initialContent?: string) => void;
   closePlotTrackerPanel: () => void;
 
   isChapterSummaryPanelOpen: boolean;
@@ -126,13 +127,14 @@ export const useUIStore = create<UIState>((set) => ({
   },
 
   isPlotTrackerPanelOpen: false,
+  plotPanelInitialContent: '',
 
-  openPlotTrackerPanel: () => {
-    set({ isPlotTrackerPanelOpen: true });
+  openPlotTrackerPanel: (initialContent?: string) => {
+    set({ isPlotTrackerPanelOpen: true, plotPanelInitialContent: initialContent || '' });
   },
 
   closePlotTrackerPanel: () => {
-    set({ isPlotTrackerPanelOpen: false });
+    set({ isPlotTrackerPanelOpen: false, plotPanelInitialContent: '' });
   },
 
   isChapterSummaryPanelOpen: false,

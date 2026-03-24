@@ -19,6 +19,7 @@ export function NovelEditorPage() {
   const navigate = useNavigate();
   const { 
     currentNovel, 
+    currentChapter,
     loadNovel, 
     addVolume, 
     addChapter,
@@ -30,6 +31,7 @@ export function NovelEditorPage() {
     isWorldStatePanelOpen,
     isResourceLedgerPanelOpen,
     isPlotTrackerPanelOpen,
+    plotPanelInitialContent,
     isChapterSummaryPanelOpen,
     isSidequestProgressPanelOpen,
     isEmotionalArcChartPanelOpen,
@@ -178,7 +180,7 @@ export function NovelEditorPage() {
             onAddChapter={handleAddChapter}
           />
         )}
-        <EditorPane />
+        <EditorPane onSetPlot={openPlotTrackerPanel} />
       </div>
 
       <StatusBar />
@@ -196,7 +198,7 @@ export function NovelEditorPage() {
       )}
 
       {isPlotTrackerPanelOpen && currentNovel && (
-        <PlotTrackerPanel novelId={currentNovel.id} onClose={closePlotTrackerPanel} />
+        <PlotTrackerPanel novelId={currentNovel.id} onClose={closePlotTrackerPanel} initialContent={plotPanelInitialContent} buriedChapterId={currentChapter?.id || ''} />
       )}
 
       {isChapterSummaryPanelOpen && currentNovel && (

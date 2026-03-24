@@ -13,7 +13,7 @@ function countWords(html: string): number {
   return chineseChars.length + englishWords.length;
 }
 
-export function EditorPane() {
+export function EditorPane({ onSetPlot }: { onSetPlot?: (selectedText: string) => void }) {
   const { currentChapter, updateChapter } = useNovelStore();
   const { setContent, setWordCount, setSaving, setLastSavedAt, isDirty } = useEditorStore();
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -34,6 +34,20 @@ export function EditorPane() {
       setWordCount(countWords(html));
     },
   });
+
+  const getSelectedText = () => {
+    if (!editor) return '';
+    const { from, to } = editor.state.selection;
+    if (from === to) return '';
+    return editor.state.doc.textBetween(from, to, ' ');
+  };
+
+  const handleSetPlot = () => {
+    const text = getSelectedText();
+    if (text && onSetPlot) {
+      onSetPlot(text);
+    }
+  };
 
   useEffect(() => {
     if (currentChapter && editor) {
@@ -128,7 +142,7 @@ export function EditorPane() {
 
       <div className="flex-1 overflow-y-auto p-8">
         <div className="max-w-3xl mx-auto">
-          <EditorToolbar editor={editor} onSave={handleSave} />
+          <EditorToolbar editor={editor} onSave={handleSave} onSetPlot={handleSetPlot} />
           <EditorContent
             editor={editor}
             className="prose dark:prose-invert prose-indigo max-w-none outline-none min-h-[500px]"
@@ -139,12 +153,18 @@ export function EditorPane() {
   );
 }
 
-function EditorToolbar({ editor, onSave }: { editor: ReturnType<typeof useEditor>; onSave: () => void }) {
+function EditorToolbar({ editor, onSave, onSetPlot }: { editor: ReturnType<typeof useEditor>; onSave: () => void; onSetPlot?: () => void }) {
   if (!editor) return null;
 
   const runCommand = (command: () => boolean) => {
     editor?.view.focus();
     command();
+  };
+
+  const hasSelection = () => {
+    if (!editor) return false;
+    const { from, to } = editor.state.selection;
+    return from !== to;
   };
 
   return (
@@ -231,6 +251,19 @@ function EditorToolbar({ editor, onSave }: { editor: ReturnType<typeof useEditor
       </button>
 
       <div className="flex-1" />
+
+      <button
+        onClick={onSetPlot}
+        disabled={!hasSelection()}
+        className={`p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800 ${
+          hasSelection() ? 'text-amber-600' : 'text-gray-400 cursor-not-allowed'
+        }`}
+        title="设为伏笔"
+      >
+        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+        </svg>
+      </button>
 
       <button
         onClick={onSave}
