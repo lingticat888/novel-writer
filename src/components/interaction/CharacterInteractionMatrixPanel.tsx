@@ -698,45 +698,49 @@ function CharacterRelationshipGraph({ interactions, characters, getRelationshipL
             onSelectInteraction(link.interactionId);
           }}
           nodeCanvasObjectMode={() => 'after'}
-          nodeCanvasObject={(node: any, ctx: CanvasRenderingContext2D) => {
-            const nodeSize = 3;
+          nodeCanvasObject={(node: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
+            const nodeSize = 4;
+            const label = node.name || '';
+            const fontSize = 12 / globalScale;
 
             ctx.save();
             ctx.beginPath();
             ctx.arc(node.x || 0, node.y || 0, nodeSize, 0, 2 * Math.PI);
             ctx.fillStyle = node.color;
+            ctx.shadowColor = node.color;
+            ctx.shadowBlur = 4;
             ctx.fill();
             ctx.restore();
+
+            ctx.font = `600 ${fontSize}px sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'top';
+            ctx.fillStyle = '#1f2937';
+            ctx.fillText(label, node.x || 0, (node.y || 0) + nodeSize + 2);
           }}
           linkCanvasObjectMode={() => 'after'}
           linkCanvasObject={(link: any, ctx: CanvasRenderingContext2D, globalScale: number) => {
-            const sourceNode = link.source as { x?: number; y?: number; name?: string };
-            const targetNode = link.target as { x?: number; y?: number; name?: string };
+            const sourceNode = link.source as { x?: number; y?: number };
+            const targetNode = link.target as { x?: number; y?: number };
             
             if (sourceNode.x === undefined || targetNode.x === undefined || sourceNode.y === undefined || targetNode.y === undefined) return;
             
-            const charAName = sourceNode.name || '';
-            const charBName = targetNode.name || '';
             const relLabel = getRelationshipLabel(link.relationshipType);
-            const label = `${charAName} ${relLabel} ${charBName}`;
             const fontSize = 10 / globalScale;
             
             const midX = (sourceNode.x + targetNode.x) / 2;
             const midY = (sourceNode.y + targetNode.y) / 2;
             
-            ctx.font = `600 ${fontSize}px sans-serif`;
+            ctx.font = `${fontSize}px sans-serif`;
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            const textWidth = ctx.measureText(label).width;
+            const textWidth = ctx.measureText(relLabel).width;
             const textHeight = fontSize;
             
-            ctx.fillStyle = 'rgba(255, 255, 255, 0.95)';
-            ctx.fillRect(midX - textWidth / 2 - 4, midY - textHeight / 2 - 2, textWidth + 8, textHeight + 4);
-            ctx.strokeStyle = link.color;
-            ctx.lineWidth = 1.5;
-            ctx.strokeRect(midX - textWidth / 2 - 4, midY - textHeight / 2 - 2, textWidth + 8, textHeight + 4);
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
+            ctx.fillRect(midX - textWidth / 2 - 3, midY - textHeight / 2 - 1, textWidth + 6, textHeight + 2);
             ctx.fillStyle = link.color;
-            ctx.fillText(label, midX, midY);
+            ctx.fillText(relLabel, midX, midY);
           }}
           cooldownTicks={100}
           d3AlphaDecay={0.02}
