@@ -184,7 +184,7 @@ export function CharacterInteractionMatrixPanel({ novelId, onClose }: CharacterI
         </div>
 
         <div className="flex-1 flex overflow-hidden">
-          <div className="w-96 border-r dark:border-gray-700 flex flex-col overflow-hidden">
+          <div className="w-96 flex-shrink-0 border-r dark:border-gray-700 flex flex-col overflow-hidden">
             <div className="p-3 border-b dark:border-gray-700">
               <button
                 onClick={() => setIsCreating(true)}
