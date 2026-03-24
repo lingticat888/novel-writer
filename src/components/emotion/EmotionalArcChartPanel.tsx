@@ -159,6 +159,7 @@ export function EmotionalArcChartPanel({ novelId, onClose }: EmotionalArcChartPa
         color: EMOTION_COLORS[point.emotion],
         note: point.note || '',
         isNegative,
+        chapterId: point.chapterId,
       };
     });
   };
@@ -287,7 +288,7 @@ export function EmotionalArcChartPanel({ novelId, onClose }: EmotionalArcChartPa
 
                 {chartData.length > 0 ? (
                   <ResponsiveContainer width="100%" height={200}>
-                    <LineChart data={chartData}>
+                    <LineChart key={selectedArcId} data={chartData}>
                       <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
                       <XAxis dataKey="name" stroke="#9ca3af" fontSize={12} />
                       <YAxis domain={[-100, 100]} ticks={[-100, -50, 0, 50, 100]} stroke="#9ca3af" fontSize={12} />
