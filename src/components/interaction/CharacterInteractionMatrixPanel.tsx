@@ -184,7 +184,7 @@ export function CharacterInteractionMatrixPanel({ novelId, onClose }: CharacterI
         </div>
 
         <div className="flex-1 flex overflow-hidden">
-          <div className="w-72 border-r dark:border-gray-700 flex flex-col">
+          <div className="w-96 border-r dark:border-gray-700 flex flex-col overflow-hidden">
             <div className="p-3 border-b dark:border-gray-700">
               <button
                 onClick={() => setIsCreating(true)}
@@ -334,11 +334,32 @@ export function CharacterInteractionMatrixPanel({ novelId, onClose }: CharacterI
                   nodeCanvasObject={(node: GraphNode, ctx: CanvasRenderingContext2D, globalScale: number) => {
                     const label = node.name;
                     const fontSize = 12 / globalScale;
-                    ctx.font = `${fontSize}px sans-serif`;
+                    ctx.font = `bold ${fontSize}px sans-serif`;
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'top';
                     ctx.fillStyle = node.color as string;
                     ctx.fillText(label, node.x!, node.y! + 8);
+                  }}
+                  linkCanvasObjectMode={() => 'after'}
+                  linkCanvasObject={(link: GraphLink, ctx: CanvasRenderingContext2D, globalScale: number) => {
+                    const label = RELATIONSHIP_LABELS[link.relationshipType];
+                    const fontSize = 10 / globalScale;
+                    const startX = link.source.x + (link.target.x - link.source.x) * 0.4;
+                    const startY = link.source.y + (link.target.y - link.source.y) * 0.4;
+                    const endX = link.source.x + (link.target.x - link.source.x) * 0.6;
+                    const endY = link.source.y + (link.target.y - link.source.y) * 0.6;
+                    const midX = (startX + endX) / 2;
+                    const midY = (startY + endY) / 2;
+                    
+                    ctx.font = `${fontSize}px sans-serif`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'middle';
+                    ctx.fillStyle = '#fff';
+                    const textWidth = ctx.measureText(label).width;
+                    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                    ctx.fillRect(midX - textWidth / 2 - 2, midY - fontSize / 2 - 2, textWidth + 4, fontSize + 4);
+                    ctx.fillStyle = link.color;
+                    ctx.fillText(label, midX, midY);
                   }}
                   cooldownTicks={100}
                   d3AlphaDecay={0.02}
