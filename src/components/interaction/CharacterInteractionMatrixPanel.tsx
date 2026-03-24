@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useCharacterInteractionStore } from '@/stores';
+import { useCharacterInteractionStore, useNovelStore } from '@/stores';
 import { characterRepository } from '@/services/characterRepository';
 import type { RelationshipType, Character } from '@/models';
 
@@ -48,6 +48,7 @@ export function CharacterInteractionMatrixPanel({ novelId, onClose }: CharacterI
     selectInteraction,
   } = useCharacterInteractionStore();
 
+  const { currentNovel } = useNovelStore();
   const [characters, setCharacters] = useState<Character[]>([]);
   const [isCreating, setIsCreating] = useState(false);
   const [selectedCharacterAId, setSelectedCharacterAId] = useState('');
