@@ -344,20 +344,25 @@ export function CharacterInteractionMatrixPanel({ novelId, onClose }: CharacterI
                   linkCanvasObject={(link: GraphLink, ctx: CanvasRenderingContext2D, globalScale: number) => {
                     const label = RELATIONSHIP_LABELS[link.relationshipType];
                     const fontSize = 10 / globalScale;
-                    const startX = link.source.x + (link.target.x - link.source.x) * 0.4;
-                    const startY = link.source.y + (link.target.y - link.source.y) * 0.4;
-                    const endX = link.source.x + (link.target.x - link.source.x) * 0.6;
-                    const endY = link.source.y + (link.target.y - link.source.y) * 0.6;
-                    const midX = (startX + endX) / 2;
-                    const midY = (startY + endY) / 2;
+                    
+                    const sourceNode = link.source as { x?: number; y?: number };
+                    const targetNode = link.target as { x?: number; y?: number };
+                    
+                    if (sourceNode.x === undefined || targetNode.x === undefined) return;
+                    
+                    const midX = (sourceNode.x + targetNode.x) / 2;
+                    const midY = (sourceNode.y + targetNode.y) / 2;
                     
                     ctx.font = `${fontSize}px sans-serif`;
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'middle';
-                    ctx.fillStyle = '#fff';
                     const textWidth = ctx.measureText(label).width;
-                    ctx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+                    
+                    ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
                     ctx.fillRect(midX - textWidth / 2 - 2, midY - fontSize / 2 - 2, textWidth + 4, fontSize + 4);
+                    ctx.strokeStyle = link.color;
+                    ctx.lineWidth = 1;
+                    ctx.strokeRect(midX - textWidth / 2 - 2, midY - fontSize / 2 - 2, textWidth + 4, fontSize + 4);
                     ctx.fillStyle = link.color;
                     ctx.fillText(label, midX, midY);
                   }}
