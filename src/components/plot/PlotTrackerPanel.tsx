@@ -39,6 +39,7 @@ export function PlotTrackerPanel({ novelId, onClose, initialContent = '', buried
   const [editingBuriedChapterId, setEditingBuriedChapterId] = useState('');
   const [resolveChapterId, setResolveChapterId] = useState('');
   const [resolveDescription, setResolveDescription] = useState('');
+  const [reuseContent, setReuseContent] = useState<string>('');
 
   useEffect(() => {
     loadPlots(novelId);
@@ -90,6 +91,16 @@ export function PlotTrackerPanel({ novelId, onClose, initialContent = '', buried
       buriedChapterId: editingBuriedChapterId,
     });
     cancelEditing();
+  };
+
+  const handleReuse = async () => {
+    if (!reuseContent.trim()) return;
+    await createPlot({
+      novelId,
+      content: reuseContent.trim(),
+      buriedChapterId: '',
+    });
+    setReuseContent('');
   };
 
   const handleResolve = async (plotId: string) => {
@@ -266,6 +277,22 @@ export function PlotTrackerPanel({ novelId, onClose, initialContent = '', buried
                           )}
                         </>
                       )}
+                      {plot.status === 'resolved' && (
+                        <div className="mt-3 flex gap-2 flex-wrap">
+                          <button
+                            onClick={() => startEditing({ id: plot.id, content: plot.content, buriedChapterId: plot.buriedChapterId })}
+                            className="px-3 py-1 text-sm bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400 rounded hover:bg-blue-200 dark:hover:bg-blue-900/50"
+                          >
+                            编辑
+                          </button>
+                          <button
+                            onClick={() => setReuseContent(plot.content)}
+                            className="px-3 py-1 text-sm bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-400 rounded hover:bg-purple-200 dark:hover:bg-purple-900/50"
+                          >
+                            复用
+                          </button>
+                        </div>
+                      )}
                       {plot.status === 'resolved' && plot.resolveDescription && (
                         <p className="mt-2 text-sm text-green-700 dark:text-green-400">
                           回收于: {plot.resolveDescription}
@@ -328,6 +355,33 @@ export function PlotTrackerPanel({ novelId, onClose, initialContent = '', buried
                   className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
                 >
                   创建
+                </button>
+              </div>
+            </div>
+          ) : reuseContent ? (
+            <div className="space-y-3">
+              <div className="text-sm text-purple-600 dark:text-purple-400">
+                复用伏笔内容：
+              </div>
+              <textarea
+                value={reuseContent}
+                onChange={(e) => setReuseContent(e.target.value)}
+                rows={2}
+                className="w-full px-3 py-2 border rounded-md dark:bg-gray-700 dark:border-gray-600 dark:text-white"
+                autoFocus
+              />
+              <div className="flex gap-2 justify-end">
+                <button
+                  onClick={() => setReuseContent('')}
+                  className="px-4 py-2 text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md"
+                >
+                  取消
+                </button>
+                <button
+                  onClick={handleReuse}
+                  className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700"
+                >
+                  创建新伏笔
                 </button>
               </div>
             </div>
