@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { useCharacterInteractionStore, useNovelStore } from '@/stores';
 import { characterRepository } from '@/services/characterRepository';
 import type { RelationshipType, Character, CharacterInteraction } from '@/models';
@@ -615,6 +615,15 @@ interface CharacterRelationshipGraphProps {
 
 function CharacterRelationshipGraph({ interactions, characters, getRelationshipLabel, getRelationshipColor, onSelectInteraction }: CharacterRelationshipGraphProps) {
   const [selectedCharacterId, setSelectedCharacterId] = useState<string | null>(null);
+  const graphRef = useRef<any>(null);
+
+  useEffect(() => {
+    if (graphRef.current) {
+      setTimeout(() => {
+        graphRef.current.zoomToFit(400, 50);
+      }, 500);
+    }
+  }, [interactions, characters]);
 
   const getRelatedCharacterIds = (charId: string): string[] => {
     const related = new Set<string>();
@@ -679,10 +688,11 @@ function CharacterRelationshipGraph({ interactions, characters, getRelationshipL
   }
 
   return (
-    <div className="relative h-full min-h-[400px]">
-      <div className="w-full h-full bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 rounded-lg overflow-hidden">
-        <ForceGraph2D
-          graphData={graphData}
+      <div className="relative h-full min-h-[400px]">
+        <div className="w-full h-full bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-900 dark:to-gray-800 rounded-lg overflow-hidden">
+          <ForceGraph2D
+            ref={graphRef}
+            graphData={graphData}
           nodeLabel={() => ''}
           nodeVal={(node: any) => node.val}
           nodeColor={(node: any) => node.color}
