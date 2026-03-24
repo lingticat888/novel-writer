@@ -147,7 +147,7 @@ export function EditorPane({ onSetPlot }: { onSetPlot?: (selectedText: string) =
 
       <div className="flex-1 overflow-y-auto p-8">
         <div className="max-w-3xl mx-auto">
-          <EditorToolbar editor={editor} onSave={handleSave} onSetPlot={handleSetPlot} />
+          <EditorToolbar editor={editor} onSave={handleSave} onSetPlot={handleSetPlot} hasSelection={hasSelection} />
           <EditorContent
             editor={editor}
             className="prose dark:prose-invert prose-indigo max-w-none outline-none min-h-[500px]"
@@ -158,7 +158,7 @@ export function EditorPane({ onSetPlot }: { onSetPlot?: (selectedText: string) =
   );
 }
 
-function EditorToolbar({ editor, onSave, onSetPlot }: { editor: ReturnType<typeof useEditor>; onSave: () => void; onSetPlot?: () => void }) {
+function EditorToolbar({ editor, onSave, onSetPlot, hasSelection }: { editor: ReturnType<typeof useEditor>; onSave: () => void; onSetPlot?: () => void; hasSelection: boolean }) {
   if (!editor) return null;
 
   const runCommand = (command: () => boolean) => {
