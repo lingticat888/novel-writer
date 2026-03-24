@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useCharacterInteractionStore, useNovelStore } from '@/stores';
 import { characterRepository } from '@/services/characterRepository';
 import type { RelationshipType, Character } from '@/models';
+import ForceGraph2D from 'react-force-graph-2d';
 
 const RELATIONSHIP_LABELS: Record<RelationshipType, string> = {
   family: '家人',
@@ -13,13 +14,37 @@ const RELATIONSHIP_LABELS: Record<RelationshipType, string> = {
 };
 
 const RELATIONSHIP_COLORS: Record<RelationshipType, string> = {
-  family: 'bg-purple-500',
-  friendship: 'bg-blue-500',
-  romance: 'bg-pink-500',
-  enmity: 'bg-red-500',
-  stranger: 'bg-gray-400',
-  other: 'bg-gray-300',
+  family: '#9333ea',
+  friendship: '#3b82f6',
+  romance: '#ec4899',
+  enmity: '#ef4444',
+  stranger: '#6b7280',
+  other: '#9ca3af',
 };
+
+const RELATIONSHIP_BG_COLORS: Record<RelationshipType, string> = {
+  family: 'bg-purple-100 dark:bg-purple-900/30',
+  friendship: 'bg-blue-100 dark:bg-blue-900/30',
+  romance: 'bg-pink-100 dark:bg-pink-900/30',
+  enmity: 'bg-red-100 dark:bg-red-900/30',
+  stranger: 'bg-gray-100 dark:bg-gray-700/50',
+  other: 'bg-gray-50 dark:bg-gray-700/50',
+};
+
+interface GraphNode {
+  id: string;
+  name: string;
+  color: string;
+  val: number;
+}
+
+interface GraphLink {
+  source: string;
+  target: string;
+  color: string;
+  relationshipType: RelationshipType;
+  interactionId: string;
+}
 
 interface CharacterInteractionMatrixPanelProps {
   novelId: string;
@@ -46,11 +71,14 @@ export function CharacterInteractionMatrixPanel({ novelId, onClose }: CharacterI
   const [selectedCharacterAId, setSelectedCharacterAId] = useState('');
   const [selectedCharacterBId, setSelectedCharacterBId] = useState('');
   const [newRelationshipType, setNewRelationshipType] = useState<RelationshipType>('stranger');
+  const [isPanelCollapsed, setIsPanelCollapsed] = useState(false);
   
   const [addingEventToId, setAddingEventToId] = useState<string | null>(null);
   const [newEventChapterId, setNewEventChapterId] = useState('');
   const [newEventType, setNewEventType] = useState('');
   const [newEventDescription, setNewEventDescription] = useState('');
+
+  const graphRef = useRef<{ centerAt: (x: number, y: number, ms: number) => void; zoom: (k: number, ms: number) => void } | null>(null);
 
   useEffect(() => {
     loadInteractions(novelId);
@@ -109,6 +137,32 @@ export function CharacterInteractionMatrixPanel({ novelId, onClose }: CharacterI
     v.chapters?.map((c) => ({ ...c, volumeTitle: v.title })) || []
   ) || [];
 
+  const graphData = {
+    nodes: characters.map((char) => ({
+      id: char.id,
+      name: char.name,
+      color: selectedCharacterId === char.id ? '#6366f1' : '#9333ea',
+      val: 1 + getInteractionsForCharacter(char.id).length * 0.5,
+    })),
+    links: interactions.map((i) => ({
+      source: i.characterAId,
+      target: i.characterBId,
+      color: RELATIONSHIP_COLORS[i.relationshipType],
+      relationshipType: i.relationshipType,
+      interactionId: i.id,
+    })),
+  };
+
+  const handleNodeClick = useCallback((node: GraphNode) => {
+    setSelectedCharacterId(node.id);
+    selectInteraction(null);
+  }, [selectInteraction]);
+
+  const handleLinkClick = useCallback((link: GraphLink) => {
+    selectInteraction(link.interactionId);
+    setSelectedCharacterId(null);
+  }, [selectInteraction]);
+
   const selectedCharacter = selectedCharacterId ? getCharacterById(selectedCharacterId) : null;
   const relatedInteractions = selectedCharacterId ? getInteractionsForCharacter(selectedCharacterId) : [];
 
@@ -130,7 +184,7 @@ export function CharacterInteractionMatrixPanel({ novelId, onClose }: CharacterI
         </div>
 
         <div className="flex-1 flex overflow-hidden">
-          <div className="w-64 border-r dark:border-gray-700 flex flex-col">
+          <div className="w-72 border-r dark:border-gray-700 flex flex-col">
             <div className="p-3 border-b dark:border-gray-700">
               <button
                 onClick={() => setIsCreating(true)}
@@ -199,7 +253,7 @@ export function CharacterInteractionMatrixPanel({ novelId, onClose }: CharacterI
               ) : (
                 <>
                   <div className="p-2 text-xs text-gray-500 border-b dark:border-gray-700">
-                    点击角色查看其关系
+                    点击节点查看关系网络
                   </div>
                   {characters.map((char) => {
                     const charInteractions = getInteractionsForCharacter(char.id);
@@ -207,7 +261,10 @@ export function CharacterInteractionMatrixPanel({ novelId, onClose }: CharacterI
                     return (
                       <button
                         key={char.id}
-                        onClick={() => setSelectedCharacterId(char.id)}
+                        onClick={() => {
+                          setSelectedCharacterId(char.id);
+                          selectInteraction(null);
+                        }}
                         className={`w-full text-left px-4 py-3 border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700 ${
                           isSelected
                             ? 'bg-indigo-50 dark:bg-indigo-900/30'
@@ -232,7 +289,7 @@ export function CharacterInteractionMatrixPanel({ novelId, onClose }: CharacterI
               <div className="flex flex-wrap gap-2">
                 {(Object.keys(RELATIONSHIP_LABELS) as RelationshipType[]).map((type) => (
                   <div key={type} className="flex items-center gap-1">
-                    <span className={`w-2 h-2 rounded-full ${RELATIONSHIP_COLORS[type]}`} />
+                    <span className="w-2 h-2 rounded-full" style={{ backgroundColor: RELATIONSHIP_COLORS[type] }} />
                     <span className="text-xs text-gray-600 dark:text-gray-400">{RELATIONSHIP_LABELS[type]}</span>
                   </div>
                 ))}
@@ -240,92 +297,82 @@ export function CharacterInteractionMatrixPanel({ novelId, onClose }: CharacterI
             </div>
           </div>
 
-          <div className="flex-1 flex flex-col overflow-hidden">
-            <div className="flex-1 overflow-y-auto p-4">
-              {!selectedCharacter ? (
-                <div className="h-full flex items-center justify-center text-gray-500">
-                  <div className="text-center">
-                    <svg className="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                    </svg>
-                    <p>从左侧选择角色查看其关系网络</p>
+          <div className="flex-1 relative bg-gray-50 dark:bg-gray-900">
+            {characters.length === 0 ? (
+              <div className="h-full flex items-center justify-center text-gray-500">
+                <div className="text-center">
+                  <svg className="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                  <p>暂无角色数据</p>
+                </div>
+              </div>
+            ) : interactions.length === 0 ? (
+              <div className="h-full flex items-center justify-center text-gray-500">
+                <div className="text-center">
+                  <svg className="w-16 h-16 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                  </svg>
+                  <p>暂无关系，点击左侧添加关系</p>
+                </div>
+              </div>
+            ) : (
+              <>
+                <ForceGraph2D
+                  ref={graphRef}
+                  graphData={graphData}
+                  nodeLabel="name"
+                  nodeVal={(node: GraphNode) => node.val}
+                  nodeColor={(node: GraphNode) => node.color as string}
+                  linkColor={(link: GraphLink) => link.color}
+                  linkWidth={(link: GraphLink) => selectedInteractionId === link.interactionId ? 4 : 2}
+                  linkDirectionalArrowLength={6}
+                  linkDirectionalArrowRelPos={0.8}
+                  onNodeClick={(node: GraphNode) => handleNodeClick(node)}
+                  onLinkClick={(link: object) => handleLinkClick(link as GraphLink)}
+                  nodeCanvasObjectMode={() => 'after'}
+                  nodeCanvasObject={(node: GraphNode, ctx: CanvasRenderingContext2D, globalScale: number) => {
+                    const label = node.name;
+                    const fontSize = 12 / globalScale;
+                    ctx.font = `${fontSize}px sans-serif`;
+                    ctx.textAlign = 'center';
+                    ctx.textBaseline = 'top';
+                    ctx.fillStyle = node.color as string;
+                    ctx.fillText(label, node.x!, node.y! + 8);
+                  }}
+                  cooldownTicks={100}
+                  d3AlphaDecay={0.02}
+                  d3VelocityDecay={0.3}
+                />
+                <div className="absolute top-4 right-4 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-3">
+                  <div className="text-xs text-gray-500 mb-2">操作提示</div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400 space-y-1">
+                    <div>• 点击节点查看该角色的关系</div>
+                    <div>• 点击连线查看关系详情</div>
+                    <div>• 拖拽节点调整布局</div>
+                    <div>• 滚轮缩放</div>
                   </div>
                 </div>
-              ) : relatedInteractions.length === 0 ? (
-                <div className="h-full flex items-center justify-center text-gray-500">
-                  <div className="text-center">
-                    <p className="mb-2">{selectedCharacter.name} 暂无关系</p>
-                    <button
-                      onClick={() => {
-                        setSelectedCharacterAId(selectedCharacter.id);
-                        setIsCreating(true);
-                      }}
-                      className="text-indigo-600 hover:text-indigo-800 text-sm"
-                    >
-                      添加第一个关系
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  <h3 className="font-medium text-gray-900 dark:text-white">
-                    {selectedCharacter.name} 的关系网络
-                  </h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {relatedInteractions.map((interaction) => {
-                      const relatedChar = getRelatedCharacter(interaction, selectedCharacter.id);
-                      const isSelected = interaction.id === selectedInteractionId;
-                      return (
-                        <div
-                          key={interaction.id}
-                          onClick={() => selectInteraction(interaction.id)}
-                          className={`p-4 rounded-lg border-l-4 cursor-pointer transition-all ${
-                            isSelected
-                              ? 'ring-2 ring-indigo-500'
-                              : 'hover:shadow-md'
-                          } ${RELATIONSHIP_BG_COLORS[interaction.relationshipType]}`}
-                        >
-                          <div className="flex items-center gap-3 mb-2">
-                            <div className={`w-10 h-10 rounded-full ${RELATIONSHIP_COLORS[interaction.relationshipType]} flex items-center justify-center text-white font-bold`}>
-                              {relatedChar?.name?.charAt(0) || '?'}
-                            </div>
-                            <div>
-                              <div className="font-medium text-gray-900 dark:text-white">
-                                {relatedChar?.name || '未知角色'}
-                              </div>
-                              <div className="text-sm text-gray-600 dark:text-gray-400">
-                                {RELATIONSHIP_LABELS[interaction.relationshipType]}
-                              </div>
-                            </div>
-                          </div>
-                          {interaction.events && interaction.events.length > 0 && (
-                            <div className="text-xs text-gray-500">
-                              {interaction.events.length} 个互动事件
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
-            </div>
+              </>
+            )}
+          </div>
 
-            {selectedInteraction && (
-              <div className="border-t dark:border-gray-700 p-4 bg-gray-50 dark:bg-gray-700/30">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="font-medium text-gray-900 dark:text-white">
-                    关系详情
-                  </h4>
-                  <button
-                    onClick={() => deleteInteraction(selectedInteraction.id)}
-                    className="text-xs text-red-600 hover:text-red-800"
-                  >
-                    删除关系
-                  </button>
-                </div>
-                
-                <div className="grid grid-cols-2 gap-4 mb-4">
+          {selectedInteraction && !isPanelCollapsed && (
+            <div className="w-80 border-l dark:border-gray-700 flex flex-col bg-white dark:bg-gray-800">
+              <div className="flex items-center justify-between p-4 border-b dark:border-gray-700">
+                <h4 className="font-medium text-gray-900 dark:text-white">
+                  关系详情
+                </h4>
+                <button
+                  onClick={() => setIsPanelCollapsed(true)}
+                  className="text-gray-400 hover:text-gray-600"
+                >
+                  ×
+                </button>
+              </div>
+              
+              <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div>
                     <div className="text-xs text-gray-500 mb-1">角色 A</div>
                     <div className="font-medium">{getCharacterById(selectedInteraction.characterAId)?.name || '-'}</div>
@@ -336,20 +383,26 @@ export function CharacterInteractionMatrixPanel({ novelId, onClose }: CharacterI
                   </div>
                 </div>
 
-                <div className="mb-4">
+                <div>
                   <div className="text-xs text-gray-500 mb-1">关系类型</div>
-                  <select
-                    value={selectedInteraction.relationshipType}
-                    onChange={(e) => updateRelationshipType(selectedInteraction.id, e.target.value as RelationshipType)}
-                    className="w-full px-2 py-1 text-sm border rounded dark:bg-gray-700 dark:border-gray-600"
-                  >
-                    {(Object.keys(RELATIONSHIP_LABELS) as RelationshipType[]).map((type) => (
-                      <option key={type} value={type}>{RELATIONSHIP_LABELS[type]}</option>
-                    ))}
-                  </select>
+                  <div className="flex items-center gap-2">
+                    <span 
+                      className="w-3 h-3 rounded-full" 
+                      style={{ backgroundColor: RELATIONSHIP_COLORS[selectedInteraction.relationshipType] }}
+                    />
+                    <select
+                      value={selectedInteraction.relationshipType}
+                      onChange={(e) => updateRelationshipType(selectedInteraction.id, e.target.value as RelationshipType)}
+                      className="flex-1 px-2 py-1 text-sm border rounded dark:bg-gray-700 dark:border-gray-600"
+                    >
+                      {(Object.keys(RELATIONSHIP_LABELS) as RelationshipType[]).map((type) => (
+                        <option key={type} value={type}>{RELATIONSHIP_LABELS[type]}</option>
+                      ))}
+                    </select>
+                  </div>
                 </div>
 
-                <div className="border-t dark:border-gray-700 pt-3">
+                <div className="border-t dark:border-gray-700 pt-4">
                   <div className="flex items-center justify-between mb-2">
                     <div className="text-sm font-medium text-gray-700 dark:text-gray-300">互动事件</div>
                     <button
@@ -361,7 +414,7 @@ export function CharacterInteractionMatrixPanel({ novelId, onClose }: CharacterI
                   </div>
 
                   {addingEventToId === selectedInteraction.id && (
-                    <div className="space-y-2 mb-3 p-3 bg-white dark:bg-gray-800 rounded border dark:border-gray-700">
+                    <div className="space-y-2 mb-3 p-3 bg-gray-50 dark:bg-gray-700/50 rounded border dark:border-gray-700">
                       <select
                         value={newEventChapterId}
                         onChange={(e) => setNewEventChapterId(e.target.value)}
@@ -398,11 +451,11 @@ export function CharacterInteractionMatrixPanel({ novelId, onClose }: CharacterI
                   )}
 
                   {selectedInteraction.events && selectedInteraction.events.length > 0 ? (
-                    <div className="space-y-2 max-h-40 overflow-y-auto">
+                    <div className="space-y-2 max-h-60 overflow-y-auto">
                       {selectedInteraction.events.map((event) => {
                         const chapter = allChapters.find((c) => c.id === event.chapterId);
                         return (
-                          <div key={event.id} className="text-sm p-2 bg-white dark:bg-gray-800 rounded border dark:border-gray-700">
+                          <div key={event.id} className="text-sm p-2 bg-gray-50 dark:bg-gray-700/50 rounded border dark:border-gray-700">
                             <div className="flex items-start justify-between">
                               <div>
                                 <div className="font-medium text-gray-900 dark:text-white">
@@ -435,19 +488,32 @@ export function CharacterInteractionMatrixPanel({ novelId, onClose }: CharacterI
                   )}
                 </div>
               </div>
-            )}
-          </div>
+
+              <div className="p-4 border-t dark:border-gray-700">
+                <button
+                  onClick={() => {
+                    if (confirm('确定要删除这个关系吗？')) {
+                      deleteInteraction(selectedInteraction.id);
+                    }
+                  }}
+                  className="w-full py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
+                >
+                  删除关系
+                </button>
+              </div>
+            </div>
+          )}
+
+          {isPanelCollapsed && (
+            <button
+              onClick={() => setIsPanelCollapsed(false)}
+              className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-indigo-600 text-white px-2 py-4 rounded-l-lg shadow-lg"
+            >
+              显示详情
+            </button>
+          )}
         </div>
       </div>
     </div>
   );
 }
-
-const RELATIONSHIP_BG_COLORS: Record<RelationshipType, string> = {
-  family: 'bg-purple-100 dark:bg-purple-900/30',
-  friendship: 'bg-blue-100 dark:bg-blue-900/30',
-  romance: 'bg-pink-100 dark:bg-pink-900/30',
-  enmity: 'bg-red-100 dark:bg-red-900/30',
-  stranger: 'bg-gray-100 dark:bg-gray-700/50',
-  other: 'bg-gray-50 dark:bg-gray-700/50',
-};
