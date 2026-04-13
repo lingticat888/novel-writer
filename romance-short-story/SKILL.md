@@ -95,6 +95,7 @@ description: 女频商业短篇小说全流程创作工作流，专注追妻火�
 3. 至少5个具体爽点场景
 4. 付费卡点位置
 5. 导语对应的情节位置
+6. **多线交织表**：2万字以上必须规划至少2条副线，明确每条副线在什么节点影响主线走向。详见 [references/chase-wife-pattern.md](references/chase-wife-pattern.md) 的"多线交织架构"
 
 ### 第四步：导语撰写
 
